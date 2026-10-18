@@ -108,6 +108,7 @@ def handle_run(
         active_observer.set_run_metrics(context.transformation_metrics)
         active_observer.experiment_metadata = context.experiment_metadata
 
+    attack_error = None
     try:
         # Retrieve resolved attack
         attack = executable_run.functions.attack
@@ -123,6 +124,7 @@ def handle_run(
         return result
 
     except Exception as error:
+        attack_error = error
 
         # Record unexpected execution failures
         if active_observer is not None:
@@ -136,4 +138,7 @@ def handle_run(
     finally:
         # Save run summary and close logging resources
         if active_observer is not None:
+            database_run_id = getattr(active_observer.logger, "database_run_id", None)
             active_observer.close()
+            if attack_error is not None and database_run_id is not None:
+                context.experiment_metadata["_database_error_recorded"] = True
