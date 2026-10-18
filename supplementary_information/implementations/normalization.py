@@ -10,4 +10,5 @@ def normalization(
     return {
         "mean": data_def.mean,
         "std": data_def.std,
+        "input_space": data_def.input_space,
     }

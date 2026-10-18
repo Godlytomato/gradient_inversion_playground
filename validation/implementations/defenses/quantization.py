@@ -10,9 +10,9 @@ def quantization(
     stochastic: bool = False,
 ) -> list[grad_transform]:
 
-    if not isinstance(bits, int) or isinstance(bits, bool) or bits <= 0:
+    if not isinstance(bits, int) or isinstance(bits, bool) or bits < 2:
         raise ValueError(
-            "Quantization bits must be a positive integer"
+            "Symmetric quantization requires an integer bit width >= 2"
         )
 
     return [

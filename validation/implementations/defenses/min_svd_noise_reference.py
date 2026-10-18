@@ -65,7 +65,11 @@ def min_svd_noise_reference(
                 parameters={
                     "construction": {
                         "name": "min_svd_alignment",
-                        "parameters": {},
+                        "parameters": {
+                            "iterations": iterations,
+                            "solve_iterations": solve_iterations,
+                            "damping": damping,
+                        },
                     },
                     "scaling": {
                         "name": "max_svd_reference_scale",

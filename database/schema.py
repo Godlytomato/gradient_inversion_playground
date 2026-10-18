@@ -3,6 +3,8 @@ SCHEMA = """
 CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     run_hash TEXT NOT NULL UNIQUE,
+    config_hash TEXT,
+    attempt INTEGER NOT NULL DEFAULT 1,
     name TEXT NOT NULL,
     model TEXT NOT NULL,
     dataset TEXT NOT NULL,
@@ -15,6 +17,7 @@ CREATE TABLE IF NOT EXISTS runs (
     best_reconstruction_hash TEXT,
     raw_description TEXT NOT NULL,
     run_metrics TEXT NOT NULL DEFAULT '{}',
+    summary TEXT NOT NULL DEFAULT '{}',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -59,3 +62,18 @@ CREATE INDEX IF NOT EXISTS idx_components_category_name ON components(category, 
 CREATE INDEX IF NOT EXISTS idx_logs_run_step ON logs(run_id, step);
 CREATE INDEX IF NOT EXISTS idx_images_run ON images(run_id);
 """
+
+
+def migrate_schema(connection):
+    """Add result metadata without rewriting or deleting historical rows."""
+    connection.executescript(SCHEMA)
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(runs)")}
+    for name, definition in (
+        ("config_hash", "TEXT"),
+        ("attempt", "INTEGER NOT NULL DEFAULT 1"),
+        ("summary", "TEXT NOT NULL DEFAULT '{}'"),
+    ):
+        if name not in columns:
+            connection.execute(f"ALTER TABLE runs ADD COLUMN {name} {definition}")
+    connection.execute("CREATE INDEX IF NOT EXISTS idx_runs_config_hash ON runs(config_hash)")
+    connection.commit()

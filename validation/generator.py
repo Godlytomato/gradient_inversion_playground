@@ -2,6 +2,7 @@
 from dataclasses import asdict
 from itertools import product
 from pathlib import Path
+import inspect
 
 import yaml
 
@@ -35,7 +36,12 @@ def generate_run(
 ) -> run_desc:
 
     attack = attack_preset.build()
-    defense = defense_preset.build()
+    # A generated target sweep should change target-calibrated defenses as well
+    # as its evaluation threshold. Explicit YAML may still choose them separately.
+    defense_parameters = {}
+    if "target_error" in inspect.signature(defense_preset.builder).parameters:
+        defense_parameters["target_error"] = target
+    defense = defense_preset.build(**defense_parameters)
     model = model_preset.build()
     data = dataset_preset.build()
 
@@ -57,26 +63,15 @@ def generate_run(
         defense_name=defense_preset.name,
 
         observer=observer_description(
-            success_policies=[
-                function_package(
-                    name="target_mse",
-                    parameters={
-                        "threshold": target,
-                    },
-                ),
-            ],
+            # Ground truth evaluates recovery after the fixed attack budget;
+            # it must not decide the practical attack's stopping time.
+            success_policies=[],
 
             fail_policies=[
                 function_package(
-                    name="no_improvement",
-                    parameters={
-                        "patience": 200,
-                    },
-                ),
-                function_package(
                     name="max_iterations",
                     parameters={
-                        "limit": 100000,
+                        "limit": attack_preset.max_iterations,
                     },
                 ),
             ],
@@ -98,9 +93,15 @@ def generate_run(
             ),
 
             best_selection=best_selection_description(
+                metric="attack_loss",
+                direction="minimize",
+            ),
+            oracle_selection=best_selection_description(
                 metric="mse",
                 direction="minimize",
             ),
+            batch_matching="assignment",
+            evaluation_target_mse=target,
         ),
     )
 

@@ -6,10 +6,17 @@ from validation.implementations.defenses.defense_def import (
 
 
 def soteria(
-    layer_name: str = "fc1",
+    layer_name: str = "auto",
     percent: float = 0.1,
     stabilizer: float = 0.1,
 ) -> list[grad_transform]:
+
+    """Prune highest sensitivity feature columns in one Linear weight.
+
+    ``auto`` chooses the model's last registered Linear layer. The fraction
+    refers to its input features, not all model parameters. This is an explicit
+    Soteria-inspired protocol, rather than a claim of paper-faithful replication.
+    """
 
     if not 0.0 <= percent <= 1.0:
         raise ValueError(
@@ -39,7 +46,7 @@ def soteria(
             ),
 
             draft_policy=function_package(
-                name="highest_draft",
+                name="feature_columns",
                 parameters={
                     "percent": percent,
                 },

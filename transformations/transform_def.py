@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Any
 
 import torch
@@ -24,3 +24,4 @@ class transformation_context:
     loss_function: Callable | None = None
     device: torch.device | None = None
     target_mse: float | None = None
+    numerical_diagnostics: dict[str, Any] = field(default_factory=dict)

@@ -6,4 +6,4 @@ def all_draft(
     **kwargs
 ) -> list[torch.Tensor]:
 
-    return ranked
+    return [torch.ones_like(score, dtype=torch.bool) for score in ranked]

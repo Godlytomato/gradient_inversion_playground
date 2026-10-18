@@ -7,7 +7,7 @@ from validation.implementations.defenses.defense_def import (
 
 def max_svd_pruning(
     percent: float = 0.1,
-    iterations: int = 10,
+    iterations: int | None = None,
 ) -> list[grad_transform]:
 
     if not 0.0 <= percent <= 1.0:
@@ -15,7 +15,7 @@ def max_svd_pruning(
             "Pruning percentage must be between 0 and 1"
         )
 
-    if iterations <= 0:
+    if iterations is not None and iterations <= 0:
         raise ValueError(
             "Number of iterations must be positive"
         )

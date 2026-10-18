@@ -13,6 +13,8 @@ CIFAR10_DATA = dataset_def(
     class_count=10,
     input_channels=3,
     input_dimensions=(32, 32),
+    input_space="raw_pixels",
+    split="test",
     mean=(
         0.4914,
         0.4822,

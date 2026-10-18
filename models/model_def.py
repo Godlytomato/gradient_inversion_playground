@@ -23,6 +23,10 @@ class model_definition:
     input_change: Callable[[nn.Module,tuple[int,int]],bool]
     channel_change: Callable[[nn.Module,int],bool]
 
+    # Architectures with adaptive pooling can explicitly accept other spatial
+    # dimensions without rebuilding a fixed-size classifier.
+    supports_variable_input: bool = False
+
     #protpety is just a like classfunction
     #callable is a function that returns a bool if its callable
     @property

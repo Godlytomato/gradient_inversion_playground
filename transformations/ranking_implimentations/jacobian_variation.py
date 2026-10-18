@@ -1,13 +1,15 @@
 """Empirical local Jacobian-Lipschitz estimator (not an upper-bound certificate)."""
 import math
 import torch
-from transformations.ranking_implimentations.transform_utils import batch_tensors, model_gradient_vector
+from transformations.ranking_implimentations.transform_utils import (
+    batch_tensors, model_gradient_vector, record_numerical_diagnostic,
+)
 
 
 def estimate_mu_j(context, radii=(1e-3, 1e-2), points=4, directions=4, safety_factor=1.5, seed=0):
-    if not radii or any(r <= 0 for r in radii):
+    if not radii or any(not math.isfinite(r) or r <= 0 for r in radii):
         raise ValueError("radii must contain positive values")
-    if points < 1 or directions < 1 or safety_factor < 1:
+    if points < 1 or directions < 1 or not math.isfinite(safety_factor) or safety_factor < 1:
         raise ValueError("points and directions must be positive; safety_factor >= 1")
 
     images, labels = batch_tensors(context)
@@ -48,6 +50,14 @@ def estimate_mu_j(context, radii=(1e-3, 1e-2), points=4, directions=4, safety_fa
                 if not math.isfinite(ratio):
                     raise ValueError("Nonfinite Jacobian-variation estimate")
                 largest = max(largest, ratio)
+    diagnostic = {
+        "method": "empirical_directional_probes", "radii": list(radii),
+        "points": points, "directions": directions, "seed": seed,
+        "safety_factor": safety_factor, "observed_maximum": largest,
+        "estimate": largest * safety_factor, "is_certified_upper_bound": False,
+        "status": "estimated" if largest else "zero_observed_variation",
+    }
+    record_numerical_diagnostic(context, "jacobian_variation", diagnostic)
     if largest == 0:
         raise ValueError("No Jacobian variation detected; try larger radii or provide manual mu_j")
     return largest * safety_factor

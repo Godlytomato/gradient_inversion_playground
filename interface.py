@@ -7,6 +7,7 @@ import streamlit as st
 import torch
 
 from database.connection import DB_PATH
+from database.image_display import viewable, align_for_display
 
 st.set_page_config(page_title="Gradient Inversion Playground", layout="wide")
 st.title("Gradient Inversion Playground")
@@ -19,10 +20,14 @@ def query_dataframe(query, parameters=()):
 
 
 def load_runs():
+    with sqlite3.connect(DB_PATH) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(runs)")}
+    extra = ", summary" if "summary" in columns else ", '{}' AS summary"
     return query_dataframe("""
         SELECT id, run_hash, name, model, dataset, batch_size,
                attack_name, attack_hash, defense_name, defense_hash,
                outcome, run_metrics, raw_description, created_at
+    """ + extra + """
         FROM runs ORDER BY id DESC
     """)
 
@@ -62,13 +67,18 @@ def load_image_rows(run_ids=None):
 
 def load_images(run_id):
     with sqlite3.connect(DB_PATH) as connection:
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(runs)")}
+        summary = {}
+        if "summary" in columns:
+            raw = connection.execute("SELECT summary FROM runs WHERE id = ?", (int(run_id),)).fetchone()
+            summary = json.loads(raw[0]) if raw else {}
         rows = connection.execute(
             "SELECT image_hash, image_type, image_data FROM images WHERE run_id = ? ORDER BY image_type",
             (int(run_id),),
         ).fetchall()
     return [
         {"hash": hash_value, "type": kind,
-         "tensor": torch.load(io.BytesIO(data), map_location="cpu", weights_only=True)}
+         "tensor": align_for_display(torch.load(io.BytesIO(data), map_location="cpu", weights_only=True), kind, summary)}
         for hash_value, kind, data in rows
     ]
 
@@ -80,13 +90,7 @@ def display_name(name, hash_value):
 
 
 def make_viewable(image):
-    image = image.detach().cpu().float().squeeze()
-    if image.ndim == 3 and image.shape[0] in (1, 3):
-        image = image.permute(1, 2, 0)
-    minimum, maximum = float(image.min()), float(image.max())
-    if (minimum < 0 or maximum > 1) and maximum > minimum:
-        image = (image - minimum) / (maximum - minimum)
-    return image.clamp(0, 1).numpy()
+    return viewable(image)
 
 
 def show_images(run_id):
@@ -223,6 +227,8 @@ with run_tab:
             st.info("No defense magnitude or mask measurements saved for this run.")
         with st.expander("Run description"):
             st.json(parse_json_dict(selected["raw_description"]))
+        with st.expander("Final summary (practical and oracle results)"):
+            st.json(parse_json_dict(selected["summary"]))
         with st.expander("Hashes"):
             st.code(f"Run: {selected['run_hash']}\nAttack: {selected['attack_hash']}\nDefense: {selected['defense_hash']}")
         st.subheader("Components")

@@ -56,9 +56,9 @@ def quantization_delta(
         # -----------------------------------------
         elif mode == "bits":
 
-            if bits < 1:
+            if not isinstance(bits, int) or isinstance(bits, bool) or bits < 2:
                 raise ValueError(
-                    "bits must be at least 1"
+                    "Symmetric quantization requires an integer bit width >= 2"
                 )
 
             max_abs = torch.max(torch.abs(gradient))

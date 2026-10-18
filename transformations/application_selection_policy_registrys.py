@@ -18,6 +18,7 @@ from transformations.draft_implimentations.lowest_draft import lowest_draft
 from transformations.draft_implimentations.all import all_draft
 from transformations.draft_implimentations.sensitivity_slices import sensitivity_slices
 from transformations.draft_implimentations.highest_and_lowest import highest_lowest
+from transformations.draft_implimentations.feature_columns import feature_columns
 
 
 # ranking policy registry
@@ -63,6 +64,7 @@ ranking_policy_dict = {
 
 # draft policy registry
 draft_policy_dict = {
+    "feature_columns": draft_policy(name="feature_columns", func=feature_columns),
     "all": draft_policy(
         name="all",
         func=all_draft

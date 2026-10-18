@@ -5,6 +5,8 @@ from dataclasses import asdict, is_dataclass
 
 import torch
 from torchvision.utils import save_image
+from database.database import json_safe
+from database.image_display import display_tensor, align_for_display
 
 
 class file_logger:
@@ -79,6 +81,7 @@ class file_logger:
         summary,
         best_image=None,
         ground_truth=None,
+        oracle_image=None,
     ):
 
         if is_dataclass(description):
@@ -97,10 +100,14 @@ class file_logger:
             "w"
         ) as file:
             json.dump(
-                header,
+                json_safe(header),
                 file,
                 indent=4
             )
+
+        if oracle_image is not None:
+            torch.save(oracle_image.detach().cpu(), os.path.join(self.directory, "oracle_reconstruction.pt"))
+            save_image(display_tensor(align_for_display(oracle_image, "oracle_reconstruction", summary)), os.path.join(self.directory, "oracle_reconstruction.png"))
 
         # best reconstruction
         if best_image is not None:
@@ -120,7 +127,7 @@ class file_logger:
             )
 
             save_image(
-                image,
+                display_tensor(align_for_display(image, "best_reconstruction", summary)),
                 os.path.join(
                     self.directory,
                     "best_reconstruction.png"
@@ -145,7 +152,7 @@ class file_logger:
             )
 
             save_image(
-                truth,
+                display_tensor(truth),
                 os.path.join(
                     self.directory,
                     "ground_truth.png"

@@ -13,22 +13,8 @@ from reconstruction.optimization.labels.implementations.idlg import (
 from reconstruction.optimization.labels.implementations.hf_gradinv_labls import (
     hf_gradinv_labels,
 )
-from reconstruction.optimization.labels.implementations.hf_gradinv_labls import (
-    hf_gradinv_labels,
-)
 
 label_policy_registry = {
-
-    "hf_gradinv": label_policy_def(
-        name="hf_gradinv",
-        function=hf_gradinv_labels,
-        requires={
-            "model",
-            "gradients",
-            "auxiliary_images",
-            "batch_size",
-        },
-    ),
 
     "known": label_policy_def(
         name="known",
@@ -51,6 +37,7 @@ label_policy_registry = {
         function=idlg_labels,
         requires={
             "gradients",
+            "batch_size",
         },
     ),
     "hf_gradinv": label_policy_def(

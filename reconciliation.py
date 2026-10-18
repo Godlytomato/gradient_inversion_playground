@@ -16,12 +16,15 @@ def reconciliation(
                 f"{model_def.name} cannot adapt input channels"
             )
 
-        model_def.channel_change(model, data.input_channels)
+        if model_def.channel_change(model, data.input_channels) is False:
+            raise ValueError(f"{model_def.name} failed to adapt input channels")
 
     if model_def.input_dimensions != data.input_dimensions:
         if model_def.input_available:
-            model_def.input_change(model, data.input_dimensions)
-        # Otherwise preserve the model's existing architecture.
+            if model_def.input_change(model, data.input_dimensions) is False:
+                raise ValueError(f"{model_def.name} failed to adapt input dimensions")
+        elif not model_def.supports_variable_input:
+            raise ValueError(f"{model_def.name} cannot adapt input dimensions")
 
     if model_def.classes != data.class_count:
         if not model_def.class_available:
@@ -29,6 +32,7 @@ def reconciliation(
                 f"{model_def.name} cannot adapt class count"
             )
 
-        model_def.classifier_change(model, data.class_count)
+        if model_def.classifier_change(model, data.class_count) is False:
+            raise ValueError(f"{model_def.name} failed to adapt class count")
 
     return model

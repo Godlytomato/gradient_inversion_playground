@@ -1,3 +1,6 @@
+import inspect
+import math
+
 from run_def import run_desc
 from reconstruction.attack_registry import attack_registry
 from reconstruction.attack_def import attack_def
@@ -29,7 +32,8 @@ def resolve_attack(description: run_desc) -> attack_def:
 
 def resolve_component(
     description: function_package | str,
-    registry: dict[str, component_def]
+    registry: dict[str, component_def],
+    wrapper_parameters: set[str] | None = None,
 ) -> tuple[resolved_function, set[str]]:
 
     # normalize strings into function packages
@@ -49,6 +53,13 @@ def resolve_component(
 
     if definition.parameter_validator is not None:
         definition.parameter_validator(parameters)
+    # Catch misspelled/unsupported parameters at the description boundary.
+    try:
+        supplied = {key: value for key, value in parameters.items()
+                    if key not in (wrapper_parameters or set())}
+        inspect.signature(definition.function).bind_partial(**supplied)
+    except TypeError as error:
+        raise ValueError(f"Invalid parameters for {description.name}: {error}") from error
 
     # construct executable component
     resolved = resolved_function(
@@ -93,8 +104,13 @@ def resolve_attack_components(description, attack_definition):
             for item in selected:
                 resolved, new_requirements = resolve_component(
                     item,
-                    slot.registry
+                    slot.registry,
+                    {"weight"} if field_name == "regularizers" else None,
                 )
+                if field_name == "regularizers" and "weight" in resolved.parameters:
+                    weight = resolved.parameters["weight"]
+                    if not isinstance(weight, (int, float)) or not math.isfinite(weight) or weight < 0:
+                        raise ValueError("Regularizer weight must be finite and nonnegative")
 
                 resolved_list.append(resolved)
                 requirements.update(new_requirements)
@@ -175,7 +191,7 @@ def resolve_observer(description):
             metric.name for metric in config.metrics
         }
 
-        if selection.metric not in metric_names:
+        if selection.metric not in metric_names | {"attack_loss"}:
             raise ValueError(
                 f"Best selection metric not configured: {selection.metric}"
             )
@@ -185,10 +201,15 @@ def resolve_observer(description):
         fail_policies=fail_policies,
         metrics=metrics,
         logging=logging,
-        best_selection=config.best_selection
+        best_selection=config.best_selection,
+        oracle_selection=config.oracle_selection,
+        batch_matching=config.batch_matching,
+        evaluation_target_mse=config.evaluation_target_mse,
     ), requirements
 
 def build_run(description: run_desc) -> run:
+
+    validate_description(description)
 
     # Find selected attack
     attack_definition = resolve_attack(description)
@@ -243,34 +264,132 @@ def validate_observer(config):
         for metric in config.metrics
     }
 
-    # policies that depend on specific metrics
+    if config.batch_matching not in {"ordered", "assignment"}:
+        raise ValueError("batch_matching must be 'ordered' or 'assignment'")
+    target = config.evaluation_target_mse
+    if target is not None:
+        if not math.isfinite(target) or target < 0 or "mse" not in metrics:
+            raise ValueError("evaluation_target_mse requires a finite nonnegative target and mse metric")
+
+    # Policies must have the data they actually evaluate.
     for policy in config.success_policies + config.fail_policies:
 
-        if policy.name == "target_mse" and "mse" not in metrics:
-            raise ValueError(
-                "target_mse requires the mse metric"
-            )
+        dependency = {
+            "target_mse": "mse", "target_psnr": "psnr", "target_ssim": "ssim",
+        }.get(policy.name)
+        if policy.name == "no_improvement":
+            dependency = policy.parameters.get("metric", "mse")
+        if dependency is not None and dependency not in metrics | {"attack_loss"}:
+            raise ValueError(f"{policy.name} requires the {dependency} metric")
+        if policy.name == "max_iterations":
+            limit = policy.parameters.get("limit")
+            if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+                raise ValueError("max_iterations limit must be a positive integer")
+        if policy.name == "no_improvement":
+            patience = policy.parameters.get("patience", 100)
+            change = policy.parameters.get("minimum_change", 1e-4)
+            if isinstance(patience, bool) or not isinstance(patience, int) or patience < 1:
+                raise ValueError("no_improvement patience must be a positive integer")
+            if not math.isfinite(change) or change < 0:
+                raise ValueError("minimum_change must be finite and nonnegative")
+        if policy.name.startswith("target_"):
+            threshold = policy.parameters.get("threshold")
+            if threshold is None or not math.isfinite(threshold):
+                raise ValueError(f"{policy.name} requires a finite threshold")
 
     # logging can only request configured metrics
     if config.logging is not None:
         for metric in config.logging.metrics:
-            if metric not in config.logging.metrics and metric != "attack_loss":
+            if metric not in metrics | {"attack_loss"}:
                 raise ValueError(
                     f"Logging requires unconfigured metric: {metric}"
                 )
 
     # best selection must use a configured metric
-    if config.best_selection is not None:
+    for selection in (config.best_selection, config.oracle_selection):
+        if selection is None:
+            continue
 
-        if config.best_selection.metric not in metrics:
+        if selection.metric not in metrics | {"attack_loss"}:
             raise ValueError(
                 "Best selection metric is not configured"
             )
 
-        if config.best_selection.direction not in {
+        if selection.direction not in {
             "minimize",
             "maximize",
         }:
             raise ValueError(
                 "Invalid best selection direction"
             )
+
+
+def validate_description(description):
+    if isinstance(description.experiment_seed, bool) or not isinstance(description.experiment_seed, int):
+        raise ValueError("experiment_seed must be an integer")
+    attack = description.attack
+    if isinstance(attack.restarts, bool) or not isinstance(attack.restarts, int) or attack.restarts < 1:
+        raise ValueError("restarts must be a positive integer")
+    if isinstance(description.data.size, bool) or not isinstance(description.data.size, int) or description.data.size < 1:
+        raise ValueError("data.size must be a positive integer")
+    if not description.data.classes:
+        raise ValueError("data.classes must contain at least one class")
+    labels = attack.label_policy
+    label_name = labels if isinstance(labels, str) else labels.name
+    if label_name in {"idlg", "hf_gradinv"} and description.data.size != 1:
+        raise ValueError(f"{label_name} currently supports batch size 1 only")
+    if attack.attack_type == "optimization":
+        if description.observer is None:
+            raise ValueError("optimization requires an observer with a bounded stopping policy")
+        policies = description.observer.success_policies + description.observer.fail_policies
+        if not any(policy.name == "max_iterations" for policy in policies):
+            raise ValueError("optimization requires an explicit max_iterations safety limit")
+    if any(item.name == "partial_gradient_matching" for item in attack.regularizers):
+        raise ValueError("partial_gradient_matching is a matching loss; select it with attack.loss")
+    validate_transformations(description.gradient_transformations)
+
+
+def validate_transformations(transformations):
+    from transformations.application_selection_policy_registrys import ranking_policy_dict, draft_policy_dict
+    from transformations.transform_registry import transform_dict, noise_construction_dict, noise_scaling_dict
+
+    def check(name, parameters, registry, runtime):
+        if name not in registry:
+            raise ValueError(f"Unknown transformation component: {name}")
+        if "percent" in parameters:
+            percent = parameters["percent"]
+            if not isinstance(percent, (int, float)) or not math.isfinite(percent) or not 0 <= percent <= 1:
+                raise ValueError("Selection percent must be finite and between 0 and 1")
+        if name == "quantization" and parameters.get("mode", "bits") == "bits":
+            bits = parameters.get("bits", 8)
+            if isinstance(bits, bool) or not isinstance(bits, int) or bits < 2:
+                raise ValueError("Signed symmetric quantization requires bits >= 2")
+        arguments = dict(runtime)
+        arguments.update(parameters)
+        try:
+            inspect.signature(registry[name].func).bind(**arguments)
+        except TypeError as error:
+            raise ValueError(f"Invalid parameters for {name}: {error}") from error
+
+    sentinel = object()
+    for item in transformations:
+        if item.ranking_policy.name == "soteria_sensitivity" and item.draft_policy.name != "feature_columns":
+            raise ValueError("Soteria requires feature_columns selection; regenerate historical Soteria YAML")
+        check(item.ranking_policy.name, item.ranking_policy.parameters, ranking_policy_dict,
+              {"package": sentinel, "context": sentinel})
+        check(item.draft_policy.name, item.draft_policy.parameters, draft_policy_dict,
+              {"scores": sentinel})
+        if item.transform.name not in transform_dict:
+            raise ValueError(f"Unknown transformation: {item.transform.name}")
+        if item.transform.name == "zero" and item.transform.parameters:
+            raise ValueError("zero transformation does not accept parameters")
+        if item.transform.name == "noise":
+            parts = item.transform.parameters
+            for field, registry, runtime in (
+                ("construction", noise_construction_dict, {"package": sentinel, "selection_masks": sentinel, "context": sentinel}),
+                ("scaling", noise_scaling_dict, {"package": sentinel, "noise_tensors": sentinel, "selection_masks": sentinel, "context": sentinel}),
+            ):
+                part = parts.get(field)
+                if not isinstance(part, dict) or "name" not in part:
+                    raise ValueError(f"noise requires {field} description")
+                check(part["name"], part.get("parameters", {}), registry, runtime)

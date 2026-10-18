@@ -52,7 +52,7 @@ def gaussian_noise_reference(
                     "scaling": {
                         "name": "max_svd_reference_scale",
                         "parameters": {
-                            "target_error": 0.02,
+                            "target_error": target_error,
                             "mu_j_method": "manual",
                             "mu_j_debug": False,
                             "mu_j": mu_j,

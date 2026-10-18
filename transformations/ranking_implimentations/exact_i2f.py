@@ -1,3 +1,4 @@
+import math
 import torch
 
 from transformations.transform_def import (
@@ -30,6 +31,8 @@ def exact_i2f(
         raise ValueError(
             "samples must be greater than zero"
         )
+    if not math.isfinite(damping) or damping <= 0:
+        raise ValueError("damping must be finite and positive")
 
     images, _ = batch_tensors(
         context
@@ -85,15 +88,10 @@ def exact_i2f(
         dtype=gram.dtype,
     )
 
-    inverse = torch.linalg.inv(
-        gram
-        + damping * identity
-    )
-
-    projected_influence = (
-        projected
-        @ inverse
-    )
+    # Solve the regularized system rather than explicitly forming its inverse.
+    projected_influence = torch.linalg.solve(
+        gram + damping * identity, projected.T,
+    ).T
 
     flat_scores = torch.linalg.vector_norm(
         projected_influence,

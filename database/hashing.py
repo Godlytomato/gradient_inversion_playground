@@ -1,65 +1,39 @@
+"""Versioned canonical identities; historical unprefixed hashes stay distinct."""
 import hashlib
 import json
+from dataclasses import fields, is_dataclass
+from collections.abc import Mapping
 
-from dataclasses import asdict, is_dataclass
+HASH_VERSION = "v2"
 
 
 def normalize_config(config):
-    """
-    Convert configuration objects into a deterministic
-    JSON-serializable structure.
-    """
-
-    if is_dataclass(config):
-        config = asdict(config)
-
-    return config
+    if is_dataclass(config) and not isinstance(config, type):
+        return {field.name: normalize_config(getattr(config, field.name)) for field in fields(config)}
+    if isinstance(config, Mapping):
+        if not all(isinstance(key, str) for key in config):
+            raise TypeError("Configuration mapping keys must be strings")
+        return {key: normalize_config(value) for key, value in config.items()}
+    if isinstance(config, (list, tuple)):
+        return [normalize_config(value) for value in config]
+    if config is None or isinstance(config, (str, int, float, bool)):
+        return config
+    raise TypeError(f"Unsupported configuration value: {type(config).__name__}")
 
 
 def config_hash(config) -> str:
-    """
-    Create a deterministic SHA256 hash for a configuration.
-    """
-
-    normalized = normalize_config(config)
-
-    encoded = json.dumps(
-        normalized,
-        sort_keys=True,
-        separators=(",", ":"),
-        default=str,
-    ).encode("utf-8")
-
-    return hashlib.sha256(
-        encoded
-    ).hexdigest()
+    encoded = json.dumps(normalize_config(config), sort_keys=True,
+                         separators=(",", ":"), allow_nan=False).encode("utf-8")
+    return f"{HASH_VERSION}:" + hashlib.sha256(encoded).hexdigest()
 
 
 def run_hash(description) -> str:
-    """
-    Hash the complete run description.
-    """
-
-    return config_hash(
-        description
-    )
+    return config_hash(description)
 
 
 def attack_hash(description) -> str:
-    """
-    Hash only the reconstruction attack configuration.
-    """
-
-    return config_hash(
-        description.attack
-    )
+    return config_hash(description.attack)
 
 
 def defense_hash(description) -> str:
-    """
-    Hash only the gradient transformation configuration.
-    """
-
-    return config_hash(
-        description.gradient_transformations
-    )
+    return config_hash(description.gradient_transformations)

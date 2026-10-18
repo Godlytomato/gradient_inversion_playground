@@ -47,6 +47,7 @@ class database_logger:
         summary,
         best_image=None,
         ground_truth=None,
+        oracle_image=None,
     ):
         image_hash = None
 
@@ -63,14 +64,17 @@ class database_logger:
                 image=ground_truth,
                 image_type="ground_truth",
             )
+        if oracle_image is not None:
+            add_image(run_id=self.database_run_id, image=oracle_image, image_type="oracle_reconstruction")
         save_run_metrics(
-            run_hash=self.run_hash,
+            run_id=self.database_run_id,
             metrics=summary["run_metrics"],
         )
         finish_run(
             run_id=self.database_run_id,
             outcome=summary["outcome"],
             best_reconstruction_hash=image_hash,
+            summary=summary,
         )
 
 
