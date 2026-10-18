@@ -91,6 +91,9 @@ class observer_description:
     logging: logging_description | None = None
 
     best_selection: best_selection_description | None = None
+    oracle_selection: best_selection_description | None = None
+    batch_matching: str = "assignment"
+    evaluation_target_mse: float | None = None
 
 
 # complete user-facing run description
@@ -106,6 +109,8 @@ class run_desc:
     defense_name: str | None = None
 
     observer: observer_description | None = None
+    experiment_seed: int = 0
+    protocol_version: int = 2
 
 
 # =========================================================
@@ -136,6 +141,9 @@ class resolved_observer:
 
     logging: resolved_function | None = None
     best_selection: best_selection_description | None = None
+    oracle_selection: best_selection_description | None = None
+    batch_matching: str = "assignment"
+    evaluation_target_mse: float | None = None
 
 
 # runtime information requirements

@@ -26,6 +26,11 @@ def hf_gradinv_labels(
 
 ):
 
+    # The sign of an aggregate class gradient does not identify every class
+    # present in a multi-image batch. Do not silently fix incomplete labels.
+    if batch_size != 1:
+        raise ValueError("HF-GradInv label inference supports batch_size=1 only")
+
     device = next(model.parameters()).device
 
 

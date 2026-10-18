@@ -69,7 +69,11 @@ def min_svd_lower_bound(
                 parameters={
                     "construction": {
                         "name": "min_svd_alignment",
-                        "parameters": {},
+                        "parameters": {
+                            "iterations": iterations,
+                            "solve_iterations": solve_iterations,
+                            "damping": damping,
+                        },
                     },
                     "scaling": {
                         "name": "lower_bound_threshold",

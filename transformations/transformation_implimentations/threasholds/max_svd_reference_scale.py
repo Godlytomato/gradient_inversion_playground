@@ -1,5 +1,6 @@
 
 import torch
+from transformations.ranking_implimentations.transform_utils import record_numerical_diagnostic
 
 from transformations.transform_def import (
     grad_package,
@@ -22,6 +23,9 @@ def max_svd_reference_scale(
     context: transformation_context,
     target_error: float | None = None,
     mu_j: float | None = None,
+    reference_iterations: int | None = None,
+    reference_tolerance: float = 1e-4,
+    reference_max_iterations: int | None = None,
     **kwargs
 ) -> list[torch.Tensor]:
     if target_error is None:
@@ -35,6 +39,9 @@ def max_svd_reference_scale(
         package,
         selection_masks,
         context,
+        iterations=reference_iterations,
+        tolerance=reference_tolerance,
+        max_iterations=reference_max_iterations,
     )
 
     # calculate the noise required for its lower bound
@@ -84,9 +91,19 @@ def max_svd_reference_scale(
             raise ValueError(
                 "Cannot scale zero noise to a nonzero reference"
             )
+        record_numerical_diagnostic(context, "max_svd_reference_scale", {
+            "status": "zero_reference_and_test", "reference_l2": 0.0,
+            "applied_l2": 0.0, "certified": False,
+        })
         return selected_noise
 
     scale = reference_norm / noise_norm
+    record_numerical_diagnostic(context, "max_svd_reference_scale", {
+        "status": "matched_reference_norm", "reference_l2": float(reference_norm),
+        "applied_l2": float(reference_norm), "test_multiplier": float(scale),
+        "reference_bound_status": getattr(context, "numerical_diagnostics", {}).get("lower_bound", {}).get("status"),
+        "certified": False,
+    })
 
     return [
         noise * scale

@@ -6,10 +6,16 @@ import torch
 def flatten_scores(
     scores: list[torch.Tensor]
 ) -> torch.Tensor:
-    return torch.cat([
+    flattened = torch.cat([
         score.reshape(-1)
         for score in scores
     ])
+    if not torch.isfinite(flattened).all():
+        raise ValueError(
+            "Coordinate drafts require finite scores; use feature_columns "
+            "for Soteria eligibility scores and regenerate historical presets"
+        )
+    return flattened
 
 
 def selection_count(

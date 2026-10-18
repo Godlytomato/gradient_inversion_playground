@@ -46,7 +46,7 @@ def e2egi() -> reconstruction_job:
 
         post_update_mods=[
             function_package(
-                name="normalized_clamp",
+                name="clamp",
             ),
         ],
 

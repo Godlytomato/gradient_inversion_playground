@@ -11,8 +11,11 @@ def grad_prod(model:nn.Module,batch:Dataset)->list[torch.Tensor]:
         images.append(image)
         labels.append(label)
 
-    images = torch.stack(images)
-    labels = torch.tensor(labels, dtype=torch.long)
+    if not images:
+        raise ValueError("Gradient production requires a nonempty batch")
+    reference = next(model.parameters())
+    images = torch.stack(images).to(device=reference.device, dtype=reference.dtype)
+    labels = torch.tensor(labels, dtype=torch.long, device=reference.device)
 
     forward = model(images)
 

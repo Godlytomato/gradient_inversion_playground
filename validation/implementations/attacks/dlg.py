@@ -25,7 +25,7 @@ def dlg() -> reconstruction_job:
 
         loss="l2",
 
-        missingness_policy="visible_nonzero",
+        missingness_policy="visible_only",
         preprocessing_gradients_policy="none",
 
         loss_mods=[],

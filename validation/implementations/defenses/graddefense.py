@@ -10,7 +10,16 @@ def graddefense(
     perturb_slices_num: int = 2,
     relative_scale: float = 0.01,
     seed: int = 0,
+    sensitivity_method: str = "frobenius_rademacher",
+    sensitivity_samples: int = 16,
+    sensitivity_seed: int = 0,
 ) -> list[grad_transform]:
+
+    """GradDefense-inspired slicing with an explicitly recorded estimator."""
+    if sensitivity_method not in {"frobenius_rademacher", "legacy_sum"}:
+        raise ValueError("Unknown GradDefense sensitivity method")
+    if not isinstance(sensitivity_samples, int) or isinstance(sensitivity_samples, bool) or sensitivity_samples < 1:
+        raise ValueError("Sensitivity samples must be a positive integer")
 
     if slices_num <= 0:
         raise ValueError(
@@ -33,6 +42,11 @@ def graddefense(
 
             ranking_policy=function_package(
                 name="graddefense_sensitivity",
+                parameters={
+                    "method": sensitivity_method,
+                    "samples": sensitivity_samples,
+                    "seed": sensitivity_seed,
+                },
             ),
 
             draft_policy=function_package(

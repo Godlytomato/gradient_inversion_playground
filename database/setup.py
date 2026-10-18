@@ -5,7 +5,7 @@ from database.connection import (
     DB_PATH,
 )
 
-from database.schema import SCHEMA
+from database.schema import migrate_schema
 
 
 def setup_database(
@@ -23,21 +23,23 @@ def setup_database(
     connection = get_connection()
 
     try:
-        connection.executescript(
-            SCHEMA
-        )
-
-        connection.commit()
+        migrate_schema(connection)
 
     finally:
         connection.close()
 
 
-if __name__ == "__main__":
-    setup_database(
-        reset=True
-    )
+def main(argv=None):
+    import argparse
+    parser = argparse.ArgumentParser(description="Initialize or migrate the experiment database")
+    parser.add_argument("--reset", action="store_true", help="Delete the existing database and all experiment results")
+    args = parser.parse_args(argv)
+    setup_database(reset=args.reset)
 
     print(
         f"Database initialized: {DB_PATH}"
     )
+
+
+if __name__ == "__main__":
+    main()

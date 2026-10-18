@@ -28,6 +28,7 @@ from transformations.ranking_implimentations.transform_utils import (
     batch_tensors,
     max_singular_direction,
     jacobian_transpose_vector_product,
+    record_numerical_diagnostic,
 )
 from transformations.ranking_implimentations.jacobian_variation import estimate_mu_j
 
@@ -50,6 +51,9 @@ def lower_bound_threshold(
     growth_factor: float = 2.0,
     max_scale: float = 1000.0,
     refine_iterations: int = 40,
+    svd_iterations: int | None = None,
+    svd_tolerance: float = 1e-4,
+    svd_max_iterations: int | None = None,
 ) -> list[torch.Tensor]:
     """Return a masked blur of minimal sufficient norm, or a bounded best effort.
 
@@ -68,6 +72,13 @@ def lower_bound_threshold(
             or not package.grads):
         raise ValueError("Gradient, noise, and mask lists must match and be nonempty")
 
+    diagnostic = {
+        "status": "initializing", "target_mse": target_error,
+        "max_relative_l2": max_scale, "mu_j_method": mu_j_method,
+        "certified": False,
+    }
+    record_numerical_diagnostic(context, "lower_bound", diagnostic)
+
     selected_noise = []
     for grad, noise, mask in zip(package.grads, noise_tensors, selection_masks):
         if grad.shape != noise.shape or noise.shape != mask.shape:
@@ -78,6 +89,7 @@ def lower_bound_threshold(
         return [torch.zeros_like(n) for n in selected_noise]
 
     if target_error == 0:
+        diagnostic.update(status="zero_target", applied_l2=0.0)
         return zeros()
 
     # Scalar geometry in float64 for more stable dot products and norms.
@@ -85,6 +97,7 @@ def lower_bound_threshold(
                     for n in selected_noise])
     dnorm = torch.linalg.vector_norm(d0).item()
     if not math.isfinite(dnorm) or dnorm == 0:
+        diagnostic.update(status="zero_or_invalid_selected_direction", applied_l2=0.0)
         warnings.warn("lower_bound_threshold: zero/invalid selected blur; returning zero blur",
                       RuntimeWarning, stacklevel=2)
         return zeros()
@@ -100,6 +113,7 @@ def lower_bound_threshold(
     if not math.isfinite(budget):
         raise ValueError("Relative L2 budget overflowed")
     if budget == 0:
+        diagnostic.update(status="zero_budget", applied_l2=0.0, gradient_norm=gnorm)
         warnings.warn("lower_bound_threshold: zero perturbation budget; returning zero blur",
                       RuntimeWarning, stacklevel=2)
         return zeros()
@@ -139,7 +153,10 @@ def lower_bound_threshold(
     if not math.isfinite(mu) or mu < 0:
         raise ValueError("mu_j must be finite and nonnegative")
 
-    sigma_value, _, _ = max_singular_direction(context, iterations=30)
+    sigma_value, _, _ = max_singular_direction(
+        context, iterations=svd_iterations, tolerance=svd_tolerance,
+        max_iterations=svd_max_iterations,
+    )
     sigma = float(sigma_value)
     if not math.isfinite(sigma) or sigma < 0:
         raise ValueError("Invalid estimated Jacobian spectral norm")
@@ -209,6 +226,7 @@ def lower_bound_threshold(
             RuntimeWarning, stacklevel=2,
         )
         scale = peak
+        diagnostic["status"] = "infeasible_best_effort"
         print("status=infeasible_best_effort")
     else:
         # Start at zero (negative residual for any positive target) and bisect
@@ -221,8 +239,16 @@ def lower_bound_threshold(
             else:
                 low = mid
         scale = high
+        diagnostic["status"] = "feasible_under_supplied_constants"
         print("status=feasible_under_supplied_constants")
 
     print(f"selected_scale={scale:.8g} relative_l2={scale/gnorm:.8g}")
     print("=============================")
+    diagnostic.update(
+        mu_j=mu, sigma_max_estimate=sigma, target_l2=target_l2,
+        direction_effect=gain, gradient_norm=gnorm, absolute_budget=budget,
+        peak_scale=peak, peak_residual=peak_residual, applied_l2=scale,
+        relative_l2=scale / gnorm, residual=residual(scale),
+        sigma_method=getattr(context, "numerical_diagnostics", {}).get("max_svd", {}).get("method"),
+    )
     return [n * scale for n in normalized_noise]

@@ -23,20 +23,21 @@ def highest_lowest(
         # total fraction selected across both ends
         selected = int(total * percent)
 
-        # split equally between highest and lowest
-        each_side = selected // 2
+        # Put an odd remainder on the high end, preserving the exact count.
+        lowest_count = selected // 2
+        highest_count = selected - lowest_count
 
         mask = torch.zeros_like(
             flat,
             dtype=torch.bool
         )
 
-        if each_side > 0:
+        if selected > 0:
 
             order = torch.argsort(flat)
 
-            lowest = order[:each_side]
-            highest = order[-each_side:]
+            lowest = order[:lowest_count]
+            highest = order[-highest_count:]
 
             mask[lowest] = True
             mask[highest] = True

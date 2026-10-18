@@ -69,6 +69,11 @@ def handle_run(
     context: runtime_context
 ):
 
+    from run_utils.seeding import seed_everything, stage_seed
+    auxiliary_seed = stage_seed(executable_run.description.experiment_seed, "auxiliary")
+    seed_everything(auxiliary_seed)
+    context.experiment_metadata.setdefault("stage_seeds", {})["auxiliary"] = auxiliary_seed
+
     # Gather required runtime information
     information = gather_information(
         executable_run.requirements,
@@ -101,6 +106,7 @@ def handle_run(
             ground_truth=observer_information.get("ground_truth")
         )
         active_observer.set_run_metrics(context.transformation_metrics)
+        active_observer.experiment_metadata = context.experiment_metadata
 
     try:
         # Retrieve resolved attack

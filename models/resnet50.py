@@ -42,4 +42,5 @@ RESNET50 = model_definition(
     classifier_change=change_classifier,
     input_change=None,
     channel_change=change_channels,
+    supports_variable_input=True,
 )

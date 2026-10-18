@@ -12,7 +12,16 @@ def graddefense_reference(
     target_error: float = 0.02,
     mu_j: float = 0.1,
     seed: int = 0,
+    sensitivity_method: str = "frobenius_rademacher",
+    sensitivity_samples: int = 16,
+    sensitivity_seed: int = 0,
 ) -> list[grad_transform]:
+
+    """Reference-budget variant of the declared GradDefense-inspired protocol."""
+    if sensitivity_method not in {"frobenius_rademacher", "legacy_sum"}:
+        raise ValueError("Unknown GradDefense sensitivity method")
+    if not isinstance(sensitivity_samples, int) or isinstance(sensitivity_samples, bool) or sensitivity_samples < 1:
+        raise ValueError("Sensitivity samples must be a positive integer")
 
     if slices_num <= 0:
         raise ValueError(
@@ -40,6 +49,11 @@ def graddefense_reference(
 
             ranking_policy=function_package(
                 name="graddefense_sensitivity",
+                parameters={
+                    "method": sensitivity_method,
+                    "samples": sensitivity_samples,
+                    "seed": sensitivity_seed,
+                },
             ),
 
             draft_policy=function_package(
@@ -61,7 +75,7 @@ def graddefense_reference(
                      "scaling": {
                         "name": "max_svd_reference_scale",
                         "parameters": {
-                            "target_error": 0.02,
+                            "target_error": target_error,
                             "mu_j_method": "manual",
                             "mu_j_debug": False,
                             "mu_j": mu_j,

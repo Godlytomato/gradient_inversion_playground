@@ -15,6 +15,13 @@ from reconstruction.optimization.regularizers.implementations.partial_gradient_m
     partial_gradient_matching,
 )
 
+
+def reject_gradient_matching_regularizer(parameters):
+    raise ValueError(
+        "partial_gradient_matching is a gradient loss, not an image regularizer; "
+        "select it through attack.loss instead"
+    )
+
 regularizer_registry = {
     "tv": regularizer_def(
         name="tv",
@@ -35,5 +42,6 @@ regularizer_registry = {
         name="partial_gradient_matching",
         function=partial_gradient_matching,
         requires=set(),
+        parameter_validator=reject_gradient_matching_regularizer,
     ),
 }

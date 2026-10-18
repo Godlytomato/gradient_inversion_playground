@@ -9,7 +9,7 @@ def max_svd_lower_bound(
     percent: float = 0.1,
     target_error: float = 0.02,
     mu_j: float = 0.1,
-    iterations: int = 10,
+    iterations: int | None = None,
 ) -> list[grad_transform]:
 
     if not 0.0 <= percent <= 1.0:
@@ -27,7 +27,7 @@ def max_svd_lower_bound(
             "mu_j must be greater than zero"
         )
 
-    if iterations <= 0:
+    if iterations is not None and iterations <= 0:
         raise ValueError(
             "Number of iterations must be positive"
         )
@@ -55,7 +55,7 @@ def max_svd_lower_bound(
                 parameters={
                     "construction": {
                         "name": "max_svd_alignment",
-                        "parameters": {},
+                        "parameters": {"iterations": iterations},
                     },
                     "scaling": {
                         "name": "lower_bound_threshold",

@@ -9,7 +9,7 @@ from transformations.transform_def import (
 def soteria_sensitivity(
     package: grad_package,
     context: transformation_context,
-    layer_name: str,
+    layer_name: str = "auto",
     stabilizer: float = 0.1,
 ) -> list[torch.Tensor]:
 
@@ -74,6 +74,12 @@ def soteria_sensitivity(
     modules = dict(
         model.named_modules()
     )
+
+    if layer_name == "auto":
+        candidates = [name for name, module in modules.items() if isinstance(module, torch.nn.Linear)]
+        if not candidates:
+            raise ValueError("Soteria requires a model with a Linear layer")
+        layer_name = candidates[-1]
 
     if layer_name not in modules:
         raise ValueError(
@@ -191,7 +197,7 @@ def soteria_sensitivity(
     scores = [
         torch.full_like(
             gradient,
-            float("inf")
+            float("-inf")
         )
         for gradient in package.grads
     ]

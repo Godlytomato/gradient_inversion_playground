@@ -1,4 +1,5 @@
 import inspect
+import time
 
 import torch
 import torch.nn.functional as F
@@ -21,9 +22,21 @@ def call_component(component, information, parameters=None, **extra):
     return component.function(**arguments)
 
 
-def run_attempt(information, components, observer, restart):
+def run_attempt(information, components, observer, restart, effort=None):
     model = information["model"]
     target_gradients = information["gradients"]
+    batch_size = information["batch_size"]
+    if isinstance(batch_size, bool) or not isinstance(batch_size, int) or batch_size <= 0:
+        raise ValueError("Attack batch_size must be a positive integer")
+    if effort is None:
+        effort = {
+            "objective_evaluations": 0,
+            "gradient_evaluations": 0,
+            "outer_iterations": 0,
+            "restarts_started": 0,
+            "_started_at": time.perf_counter(),
+        }
+    effort["restarts_started"] += 1
 
     initialization = components["initialization_policy"]
     label_policy = components["label_policy"]
@@ -37,8 +50,20 @@ def run_attempt(information, components, observer, restart):
     pre_update_mods = components.get("pre_update_mods", [])
     scheduler_def = components.get("scheduler")
 
-    reconstruction = call_component(initialization, information).detach().requires_grad_(True)
-    label_state = validate_label_state(call_component(label_policy, information))
+    initial_reconstruction = call_component(initialization, information)
+    if not isinstance(initial_reconstruction, torch.Tensor):
+        raise TypeError("Initialization must return a torch.Tensor")
+    if initial_reconstruction.ndim < 2 or initial_reconstruction.shape[0] != batch_size:
+        raise ValueError("Initialization must return a reconstruction with the requested batch size")
+    if not initial_reconstruction.is_floating_point() or not torch.isfinite(initial_reconstruction).all():
+        raise ValueError("Initial reconstruction must contain finite floating-point values")
+    reconstruction = initial_reconstruction.detach().requires_grad_(True)
+    label_state = validate_label_state(
+        call_component(label_policy, information),
+        batch_size=batch_size,
+        class_count=information.get("class_count"),
+        device=reconstruction.device,
+    )
 
     trainable = [reconstruction]
     if label_state.trainable:
@@ -64,7 +89,16 @@ def run_attempt(information, components, observer, restart):
     closure_required = requires_closure(optimizer)
 
     def objective(candidate_reconstruction):
+        effort["objective_evaluations"] += 1
         prediction = model(candidate_reconstruction)
+        if prediction.ndim != 2 or prediction.shape[0] != batch_size:
+            raise ValueError("Model must return class logits with shape [batch, classes]")
+        validate_label_state(
+            label_state,
+            batch_size=batch_size,
+            class_count=prediction.shape[1],
+            device=prediction.device,
+        )
         if label_state.trainable:
             probabilities = F.softmax(label_state.labels, dim=1)
             task_loss = -(probabilities * F.log_softmax(prediction, dim=1)).sum(dim=1).mean()
@@ -74,15 +108,14 @@ def run_attempt(information, components, observer, restart):
         reconstructed_gradients = torch.autograd.grad(
             task_loss, tuple(model.parameters()), create_graph=True
         )
+        # Each evaluation reconstructs one complete model-gradient observation;
+        # LBFGS closure calls and FedLeak probes are included in this counter.
+        effort["gradient_evaluations"] += 1
 
         if missingness_policy.name == "visible_only":
-            matching_loss = masked_loss(
-                loss_function=lambda **kwargs: call_component(loss_def, information, **kwargs),
-                reconstructed_gradients=reconstructed_gradients,
-                target_gradients=preprocessed_target_gradients,
-                missing_mask=preprocessed_missing_mask,
-                state=state,
-            )
+            adapted_reconstructed = reconstructed_gradients
+            adapted_target = preprocessed_target_gradients
+            adapted_mask = preprocessed_missing_mask
         else:
             adapted_reconstructed, adapted_target = call_component(
                 missingness_policy,
@@ -91,13 +124,17 @@ def run_attempt(information, components, observer, restart):
                 target_gradients=preprocessed_target_gradients,
                 missing_mask=preprocessed_missing_mask,
             )
-            matching_loss = call_component(
-                loss_def,
-                information,
-                reconstructed_gradients=adapted_reconstructed,
-                target_gradients=adapted_target,
-                state=state,
-            )
+            adapted_mask = None
+        loss_arguments = {"state": state, **loss_def.parameters}
+        matching_loss = masked_loss(
+            loss_function=lambda **kwargs: call_component(
+                loss_def, information, parameters={}, **kwargs
+            ),
+            reconstructed_gradients=adapted_reconstructed,
+            target_gradients=adapted_target,
+            missing_mask=adapted_mask,
+            **loss_arguments,
+        )
 
         attack_loss = matching_loss
         for mod in loss_mods:
@@ -117,6 +154,8 @@ def run_attempt(information, components, observer, restart):
             )
             attack_loss = attack_loss + weight * regularizer_value
 
+        if attack_loss.ndim != 0 or not torch.isfinite(attack_loss):
+            raise FloatingPointError("Attack objective must be a finite scalar")
         return attack_loss
 
     context = optimization_context(objective=objective)
@@ -131,6 +170,9 @@ def run_attempt(information, components, observer, restart):
                     mod, information,
                     reconstruction=reconstruction, state=state, context=context,
                 )
+            for parameter in trainable:
+                if parameter.grad is not None and not torch.isfinite(parameter.grad).all():
+                    raise FloatingPointError("Attack produced nonfinite optimization gradients")
             return attack_loss
 
         if closure_required:
@@ -145,15 +187,22 @@ def run_attempt(information, components, observer, restart):
 
         for mod in post_update_mods:
             call_component(mod, information, reconstruction=reconstruction, state=state)
+        if not torch.isfinite(reconstruction).all():
+            raise FloatingPointError("Attack update produced a nonfinite reconstruction")
 
         state.iteration += 1
+        effort["outer_iterations"] += 1
         with torch.enable_grad():
             current_loss = objective(reconstruction).detach().item()
 
-        observer.update(
-            reconstruction,
-            metrics={"attack_loss": current_loss},
-        )
+        measurements = {
+            name: value for name, value in effort.items() if not name.startswith("_")
+        }
+        measurements["elapsed_seconds"] = time.perf_counter() - effort["_started_at"]
+        measurements["restart_index"] = restart
+        if hasattr(observer, "set_run_metrics"):
+            observer.set_run_metrics(measurements)
+        observer.update(reconstruction, metrics={"attack_loss": current_loss, **measurements})
         if observer.should_stop():
             break
 
@@ -163,8 +212,17 @@ def run_attempt(information, components, observer, restart):
 def optimization_attack(information, components, observer=None, restarts=1, base_seed=0):
     if observer is None:
         raise RuntimeError("Optimization attack requires an observer with a stopping policy")
+    if isinstance(restarts, bool) or not isinstance(restarts, int) or restarts <= 0:
+        raise ValueError("Attack restarts must be a positive integer")
 
     last_reconstruction = None
+    effort = {
+        "objective_evaluations": 0,
+        "gradient_evaluations": 0,
+        "outer_iterations": 0,
+        "restarts_started": 0,
+        "_started_at": time.perf_counter(),
+    }
     for restart in range(restarts):
         if restart > 0:
             observer.reset_attempt()
@@ -179,6 +237,7 @@ def optimization_attack(information, components, observer=None, restarts=1, base
             components=components,
             observer=observer,
             restart=restart,
+            effort=effort,
         )
         if observer.outcome == "success":
             break

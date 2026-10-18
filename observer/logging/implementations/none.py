@@ -30,6 +30,7 @@ class none_logger:
         summary,
         best_image=None,
         ground_truth=None,
+        oracle_image=None,
     ):
         pass
 

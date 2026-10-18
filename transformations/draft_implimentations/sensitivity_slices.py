@@ -91,6 +91,9 @@ def sensitivity_slices(
             float(sensitivity.detach().cpu())
         )
 
+        if not math.isfinite(layer_sensitivity[-1]) or layer_sensitivity[-1] < 0:
+            raise ValueError("Layer sensitivity must be finite and nonnegative")
+
         layer_sizes.append(
             score.numel()
         )
@@ -181,7 +184,7 @@ def sensitivity_slices(
     current_slice = 0
     current_sensitivity = 0.0
 
-    for atom in atoms:
+    for atom_index, atom in enumerate(atoms):
 
         atom_sensitivity = atom[3]
 
@@ -194,10 +197,13 @@ def sensitivity_slices(
         # Move to the next slice when adding another atom
         # would cross the target and this slice already
         # contains at least one atom.
-        if (
-            slices[current_slice]
-            and current_sensitivity + atom_sensitivity
-            >= target_sensitivity
+        remaining_atoms = len(atoms) - atom_index
+        remaining_slices = slices_num - current_slice - 1
+        if slices[current_slice] and (
+            current_sensitivity + atom_sensitivity >= target_sensitivity
+            # Reserve at least one atom for every remaining slice, even if
+            # a dominant early atom exhausted most of the sensitivity.
+            or remaining_atoms <= remaining_slices
         ):
 
             current_slice += 1
@@ -206,6 +212,9 @@ def sensitivity_slices(
         slices[current_slice].append(atom)
 
         current_sensitivity += atom_sensitivity
+
+    if not all(slices):
+        raise RuntimeError("GradDefense partition produced an empty slice")
 
     # ---------------------------------------------------------
     # Randomly select slices for perturbation.

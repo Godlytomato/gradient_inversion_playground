@@ -16,3 +16,4 @@ class runtime_context:
     batch: Any
     gradients: grad_package
     transformation_metrics: dict[str, float] = field(default_factory=dict)
+    experiment_metadata: dict[str, Any] = field(default_factory=dict)

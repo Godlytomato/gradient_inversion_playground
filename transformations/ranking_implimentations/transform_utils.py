@@ -1,3 +1,5 @@
+import math
+
 import torch
 import torch.nn as nn
 
@@ -218,11 +220,13 @@ def gradient_jacobian(
 
     for gradient_value in flat_gradients:
 
-        input_gradient = torch.autograd.grad(
-            gradient_value,
-            images,
-            retain_graph=True,
-        )[0]
+        input_gradient = None
+        if gradient_value.requires_grad:
+            input_gradient = torch.autograd.grad(
+                gradient_value, images, retain_graph=True, allow_unused=True,
+            )[0]
+        if input_gradient is None:
+            input_gradient = torch.zeros_like(images)
 
         rows.append(
             input_gradient.reshape(-1)
@@ -394,13 +398,19 @@ def jacobian_transpose_vector_product(
         )
     )
 
+    if not flat_gradients.requires_grad:
+        return torch.zeros_like(images).reshape(-1)
+
     jtv = torch.autograd.grad(
         outputs=flat_gradients,
         inputs=images,
         grad_outputs=vector,
         create_graph=False,
+        allow_unused=True,
     )[0]
 
+    if jtv is None:
+        jtv = torch.zeros_like(images)
     return jtv.reshape(-1)
 
 
@@ -520,162 +530,216 @@ def conjugate_gradient(
     iterations: int = 8,
     tolerance: float = 1e-6,
 ) -> torch.Tensor:
+    """Approximately solve a positive-definite system with relative tolerance.
+
+    A fixed absolute cutoff on p.T A p incorrectly rejects small-scale systems.
+    The caller remains responsible for checking the resulting solution residual.
     """
-    Approximately solve Ax=b using only a function
-    that computes Ax.
-    """
-
-    x = torch.zeros_like(
-        b
-    )
-
-    r = (
-        b
-        - matrix_vector_func(
-            x
-        )
-    )
-
+    if iterations < 1 or not math.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("CG iterations and relative tolerance must be positive")
+    x = torch.zeros_like(b)
+    r = b - matrix_vector_func(x)
     p = r.clone()
-
-    rs_old = torch.dot(
-        r,
-        r,
-    )
-
+    rs_old = torch.dot(r, r)
+    threshold = tolerance * torch.linalg.vector_norm(b)
+    if torch.linalg.vector_norm(r) <= threshold:
+        return x
     for _ in range(iterations):
-
-        Ap = matrix_vector_func(
-            p
-        )
-
-        denominator = torch.dot(
-            p,
-            Ap,
-        )
-
-        if denominator.abs() < 1e-12:
+        ap = matrix_vector_func(p)
+        denominator = torch.dot(p, ap)
+        if not torch.isfinite(denominator):
+            raise RuntimeError("Nonfinite conjugate-gradient denominator")
+        if denominator <= 0:
+            raise RuntimeError("CG requires a positive-definite operator")
+        alpha = rs_old / denominator
+        x = x + alpha * p
+        r = r - alpha * ap
+        rs_new = torch.dot(r, r)
+        if torch.sqrt(rs_new) <= threshold:
             break
-
-        alpha = (
-            rs_old
-            / denominator
-        )
-
-        x = (
-            x
-            + alpha * p
-        )
-
-        r = (
-            r
-            - alpha * Ap
-        )
-
-        rs_new = torch.dot(
-            r,
-            r,
-        )
-
-        if torch.sqrt(
-            rs_new
-        ) < tolerance:
-            break
-
-        if rs_old.abs() < 1e-12:
-            break
-
-        p = (
-            r
-            + (
-                rs_new
-                / rs_old
-            ) * p
-        )
-
+        p = r + (rs_new / rs_old) * p
         rs_old = rs_new
-
     return x
 
 
-# ============================================================
-# singular directions
-# ============================================================
+def record_numerical_diagnostic(context, name, values):
+    """Keep JSON-compatible numerical status for the experiment metadata."""
+    if getattr(context, "numerical_diagnostics", None) is None:
+        context.numerical_diagnostics = {}
+    context.numerical_diagnostics[name] = values
+
+
+def _singular_settings(iterations, tolerance, exact_max_elements, exact_max_input_size):
+    if iterations < 1 or not math.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("Singular iterations and relative tolerance must be positive")
+    if exact_max_elements < 0 or exact_max_input_size < 0:
+        raise ValueError("Exact Jacobian resource caps must be nonnegative")
+
+
+def _small_jacobian(context, images, exact_max_elements, exact_max_input_size):
+    # Build columns, rather than one reverse pass per parameter coordinate.
+    # These two caps bound both storage/SVD work and derivative evaluations.
+    size = images.numel()
+    if size > exact_max_input_size or exact_max_elements == 0:
+        return None
+    if any(isinstance(p, torch.nn.parameter.UninitializedParameter)
+           for p in context.model.parameters()):
+        return None
+    parameter_size = sum(p.numel() for p in context.model.parameters())
+    if size * parameter_size > exact_max_elements:
+        return None
+    columns = []
+    for index in range(size):
+        direction = torch.zeros(size, dtype=images.dtype, device=images.device)
+        direction[index] = 1
+        columns.append(jacobian_vector_product(direction, context))
+    matrix = torch.stack(columns, dim=1)
+    if not torch.isfinite(matrix).all():
+        raise RuntimeError("Nonfinite gradient Jacobian")
+    return matrix
+
+
+def _exact_singular_triplet(context, matrix, which, rank_policy):
+    # Float64 SVD avoids losing small singular values solely to the decomposition.
+    # Rank tolerance still reflects the precision of the computed Jacobian.
+    left, values, right_h = torch.linalg.svd(matrix.to(torch.float64), full_matrices=False)
+    relative_rank_tolerance = max(matrix.shape) * torch.finfo(matrix.dtype).eps
+    cutoff = float(values[0]) * relative_rank_tolerance
+    rank = int((values > cutoff).sum())
+    diagnostic = {
+        "method": "exact_svd", "status": "converged",
+        "input_size": matrix.shape[1], "gradient_size": matrix.shape[0],
+        "rank": rank, "rank_policy": rank_policy,
+        "relative_rank_tolerance": relative_rank_tolerance,
+        "relative_residual": 0.0,
+        "spectral_norm": float(values[0]),
+        "spectral_norm_is_certified_upper_bound": False,
+    }
+    if which == "min" and (rank == 0 or (rank < matrix.shape[1] and rank_policy == "error")):
+        diagnostic["status"] = "numerical_nullspace"
+        record_numerical_diagnostic(context, "min_svd", diagnostic)
+        raise RuntimeError(
+            "Minimum singular direction has a numerical input nullspace; "
+            "a zero singular value has no uniquely coupled left direction. "
+            "For an explicit minimum-positive-singular-value experiment, use "
+            "rank_policy='smallest_nonzero' (only when rank is nonzero)."
+        )
+    index = 0 if which == "max" else rank - 1
+    sigma = values[index].to(matrix.dtype)
+    u = left[:, index].to(matrix.dtype)
+    v = right_h[index].to(matrix.dtype)
+    if which == "min" and rank < matrix.shape[1]:
+        diagnostic["status"] = "minimum_nonzero_by_explicit_policy"
+    diagnostic["sigma"] = float(sigma)
+    if which == "max" and rank == 0:
+        u = torch.zeros_like(u)
+        diagnostic["status"] = "zero_jacobian"
+    if float(values[0]) > 0:
+        left_residual = torch.linalg.vector_norm(matrix.T @ u - sigma * v)
+        right_residual = torch.linalg.vector_norm(matrix @ v - sigma * u)
+        diagnostic["relative_residual"] = float(
+            torch.maximum(left_residual, right_residual) / values[0]
+        )
+    record_numerical_diagnostic(context, which + "_svd", diagnostic)
+    return sigma, u, v
+
+
+def _random_unit(images):
+    v = torch.randn(images.numel(), device=images.device, dtype=images.dtype)
+    norm = torch.linalg.vector_norm(v)
+    if not torch.isfinite(norm) or norm == 0:
+        raise RuntimeError("Could not initialize singular direction")
+    return v / norm
+
+
+def _power_direction(context, images, iterations, tolerance=None, check_after=1):
+    v = _random_unit(images)
+    for step in range(iterations):
+        candidate = jtj_vector_product(v, context)
+        norm = torch.linalg.vector_norm(candidate)
+        if not torch.isfinite(norm):
+            raise RuntimeError("Nonfinite singular power iteration")
+        if norm == 0:
+            break
+        if tolerance is not None and step + 1 >= check_after:
+            eigenvalue = torch.dot(v, candidate)
+            if eigenvalue > 0:
+                relative = torch.linalg.vector_norm(candidate - eigenvalue * v) / eigenvalue
+                if relative <= tolerance:
+                    break
+        v = candidate / norm
+    image = jacobian_vector_product(v, context)
+    return torch.linalg.vector_norm(image), image, v, step + 1
+
+
+def _checked_singular_triplet(context, sigma, image, v, scale, which, tolerance, diagnostic):
+    # Do not amplify numerical leakage from Jv near an input-null direction.
+    numerical_floor = math.sqrt(torch.finfo(image.dtype).eps) * float(scale)
+    if not torch.isfinite(sigma) or float(sigma) <= numerical_floor:
+        diagnostic.update(status="numerical_nullspace", sigma=float(sigma))
+        record_numerical_diagnostic(context, which + "_svd", diagnostic)
+        raise RuntimeError(
+            "Singular direction is numerically null or unresolved; refusing to "
+            "normalize Jacobian leakage. Use a bounded exact SVD on a smaller "
+            "problem or an explicit rank-aware solver."
+        )
+    u = image / sigma
+    residual = torch.linalg.vector_norm(jacobian_transpose_vector_product(u, context) - sigma * v)
+    relative = float(residual / scale)
+    diagnostic.update(sigma=float(sigma), relative_residual=relative)
+    if not math.isfinite(relative) or relative > tolerance:
+        diagnostic["status"] = "unconverged"
+        record_numerical_diagnostic(context, which + "_svd", diagnostic)
+        raise RuntimeError(
+            f"{which}-SVD direction did not converge: relative singular residual "
+            f"{relative:.3g} exceeds {tolerance:.3g}. Increase iterations/solve_iterations "
+            "or use an exact SVD within the resource caps."
+        )
+    diagnostic["status"] = "converged_estimate"
+    record_numerical_diagnostic(context, which + "_svd", diagnostic)
+    return sigma, u, v
+
 
 def max_singular_direction(
     context: transformation_context,
-    iterations: int = 10,
+    iterations: int | None = None,
+    tolerance: float = 1e-4,
+    exact_max_elements: int = 200000,
+    exact_max_input_size: int = 64,
+    max_iterations: int | None = None,
 ):
+    """Return a checked dominant triplet, with a bounded exact-SVD fallback.
+
+    Matrix-free convergence is checked by the singular residual; it is not a
+    certified upper bound on the spectral norm or proof of global extremality.
+    Set either exact resource cap to zero to force matrix-free operation.
+    With omitted iterations, refine from 10 to at most 500 power steps, stopping
+    on a checked residual. An explicit iterations value is a hard limit unless
+    max_iterations explicitly grants a larger adaptive budget.
     """
-    Estimate the dominant singular triplet of J.
-
-    Returns:
-        sigma:
-            estimated largest singular value
-
-        u:
-            gradient-space left singular direction
-
-        v:
-            input-space right singular direction
-    """
-
-    images, _ = batch_tensors(
-        context
+    initial_iterations = 10 if iterations is None else iterations
+    cap = (500 if iterations is None else iterations) if max_iterations is None else max_iterations
+    _singular_settings(initial_iterations, tolerance, exact_max_elements, exact_max_input_size)
+    if cap < initial_iterations:
+        raise ValueError("max_iterations must be at least the initial iterations")
+    images, _ = batch_tensors(context)
+    matrix = _small_jacobian(context, images, exact_max_elements, exact_max_input_size)
+    if matrix is not None:
+        return _exact_singular_triplet(context, matrix, "max", "maximum")
+    sigma, image, v, used_iterations = _power_direction(
+        context, images, cap, tolerance=tolerance, check_after=initial_iterations,
     )
-
-    v = torch.randn(
-        images.numel(),
-        device=images.device,
-        dtype=images.dtype,
-    )
-
-    norm = torch.linalg.vector_norm(
-        v
-    )
-
-    if norm == 0:
-        raise RuntimeError(
-            "Could not initialize max singular direction"
-        )
-
-    v = (
-        v / norm
-    )
-
-    for _ in range(iterations):
-
-        v_new = jtj_vector_product(
-            vector=v,
-            context=context,
-        )
-
-        norm = torch.linalg.vector_norm(
-            v_new
-        )
-
-        if norm == 0:
-            break
-
-        v = (
-            v_new / norm
-        )
-
-    u = jacobian_vector_product(
-        vector=v,
-        context=context,
-    )
-
-    sigma = torch.linalg.vector_norm(
-        u
-    )
-
-    if sigma != 0:
-        u = (
-            u / sigma
-        )
-
-    return sigma, u, v
+    diagnostic = {
+        "method": "matrix_free_power", "iterations": used_iterations,
+        "initial_iterations": initial_iterations, "max_iterations": cap,
+        "relative_tolerance": tolerance,
+        "spectral_norm_is_certified_upper_bound": False,
+    }
+    if float(sigma) == 0:
+        diagnostic.update(status="zero_observed_product", sigma=0.0, relative_residual=0.0)
+        record_numerical_diagnostic(context, "max_svd", diagnostic)
+        return sigma, torch.zeros_like(image), v
+    return _checked_singular_triplet(context, sigma, image, v, sigma, "max", tolerance, diagnostic)
 
 
 def min_singular_direction(
@@ -683,92 +747,53 @@ def min_singular_direction(
     iterations: int = 5,
     solve_iterations: int = 8,
     damping: float = 1e-4,
+    tolerance: float = 1e-4,
+    exact_max_elements: int = 200000,
+    exact_max_input_size: int = 64,
+    rank_policy: str = "error",
 ):
+    """Return a checked minimum triplet, rejecting unresolved/null directions.
+
+    ``damping`` is relative to the estimated squared spectral norm, preserving
+    directions under scalar changes of the gradient map. Exact SVD is used only
+    within both resource caps. The default rejects input-null singular values;
+    ``smallest_nonzero`` explicitly chooses the least positive triplet when an
+    exact SVD identifies rank. Matrix-free output remains an estimate.
     """
-    Estimate a minimum singular direction of J using
-    damped inverse iteration.
-
-    Returns:
-        sigma:
-            estimated singular value
-
-        u:
-            gradient-space left singular direction
-
-        v:
-            input-space right singular direction
-    """
-
-    if damping <= 0:
-        raise ValueError(
-            "damping must be greater than zero"
-        )
-
-    images, _ = batch_tensors(
-        context
-    )
-
-    v = torch.randn(
-        images.numel(),
-        device=images.device,
-        dtype=images.dtype,
-    )
-
-    norm = torch.linalg.vector_norm(
-        v
-    )
-
-    if norm == 0:
-        raise RuntimeError(
-            "Could not initialize min singular direction"
-        )
-
-    v = (
-        v / norm
-    )
-
-    def damped_jtj(
-        vector
-    ):
-        return (
-            jtj_vector_product(
-                vector=vector,
-                context=context,
-            )
-            + damping * vector
-        )
-
+    _singular_settings(iterations, tolerance, exact_max_elements, exact_max_input_size)
+    if not math.isfinite(damping) or damping <= 0 or solve_iterations < 1:
+        raise ValueError("Damping and solve iterations must be positive")
+    if rank_policy not in {"error", "smallest_nonzero"}:
+        raise ValueError("rank_policy must be 'error' or 'smallest_nonzero'")
+    images, _ = batch_tensors(context)
+    matrix = _small_jacobian(context, images, exact_max_elements, exact_max_input_size)
+    if matrix is not None:
+        return _exact_singular_triplet(context, matrix, "min", rank_policy)
+    if rank_policy != "error":
+        raise RuntimeError("smallest_nonzero rank policy requires exact SVD within resource caps")
+    scale, _, _, _ = _power_direction(context, images, max(5, iterations))
+    if not torch.isfinite(scale) or scale == 0:
+        record_numerical_diagnostic(context, "min_svd", {"status": "zero_jacobian_observed", "method": "matrix_free_inverse"})
+        raise RuntimeError("No nonzero Jacobian direction observed for minimum-SVD estimation")
+    v = _random_unit(images)
+    def normalized_operator(direction):
+        # Dividing Jv first avoids underflow/overflow from squaring the scale.
+        jv = jacobian_vector_product(direction, context) / scale
+        return jacobian_transpose_vector_product(jv, context) / scale + damping * direction
     for _ in range(iterations):
-
-        z = conjugate_gradient(
-            matrix_vector_func=damped_jtj,
-            b=v,
-            iterations=solve_iterations,
-        )
-
-        norm = torch.linalg.vector_norm(
-            z
-        )
-
-        if norm == 0:
-            break
-
-        v = (
-            z / norm
-        )
-
-    u = jacobian_vector_product(
-        vector=v,
-        context=context,
-    )
-
-    sigma = torch.linalg.vector_norm(
-        u
-    )
-
-    if sigma != 0:
-        u = (
-            u / sigma
-        )
-
-    return sigma, u, v
+        z = conjugate_gradient(normalized_operator, v, iterations=solve_iterations,
+                               tolerance=min(tolerance * .1, 1e-6))
+        norm = torch.linalg.vector_norm(z)
+        if not torch.isfinite(norm) or norm == 0:
+            raise RuntimeError("Minimum-SVD inverse solve produced an invalid direction")
+        v = z / norm
+    image = jacobian_vector_product(v, context)
+    sigma = torch.linalg.vector_norm(image)
+    diagnostic = {
+        "method": "matrix_free_inverse", "iterations": iterations,
+        "solve_iterations": solve_iterations, "relative_damping": damping,
+        "relative_tolerance": tolerance, "rank_policy": rank_policy,
+        "spectral_scale_estimate": float(scale),
+        "spectral_norm_is_certified_upper_bound": False,
+    }
+    return _checked_singular_triplet(context, sigma, image, v, scale, "min", tolerance, diagnostic)

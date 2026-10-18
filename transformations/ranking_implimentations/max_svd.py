@@ -1,80 +1,22 @@
+"""Coordinate scores from a checked dominant singular triplet."""
 import torch
-
-from transformations.transform_def import (
-    grad_package,
-    transformation_context,
-)
-
-from .transform_utils import (
-    batch_tensors,
-    jacobian_vector_product,
-    jtj_vector_product,
-    reshape_scores,
-)
+from transformations.transform_def import grad_package, transformation_context
+from .transform_utils import max_singular_direction, reshape_scores
 
 
 def max_svd(
     package: grad_package,
     context: transformation_context,
-    iterations: int = 10,
+    iterations: int | None = None,
+    tolerance: float = 1e-4,
+    exact_max_elements: int = 200000,
+    exact_max_input_size: int = 64,
+    max_iterations: int | None = None,
 ) -> list[torch.Tensor]:
-    """
-    Estimate contribution to the largest singular direction
-    without explicitly constructing the Jacobian.
-    """
-
-    images, _ = batch_tensors(
-        context
+    """Rank absolute left coordinates, sharing the constructor's estimator."""
+    _, direction, _ = max_singular_direction(
+        context, iterations=iterations, tolerance=tolerance,
+        exact_max_elements=exact_max_elements, exact_max_input_size=exact_max_input_size,
+        max_iterations=max_iterations,
     )
-
-    size = images.numel()
-
-    v = torch.randn(
-        size,
-        device=images.device,
-        dtype=images.dtype,
-    )
-
-    v = (
-        v
-        / torch.linalg.vector_norm(v)
-    )
-
-    for _ in range(iterations):
-
-        v_new = jtj_vector_product(
-            vector=v,
-            context=context,
-        )
-
-        norm = torch.linalg.vector_norm(
-            v_new
-        )
-
-        if norm == 0:
-            break
-
-        v = (
-            v_new / norm
-        )
-
-    u = jacobian_vector_product(
-        vector=v,
-        context=context,
-    )
-
-    norm = torch.linalg.vector_norm(
-        u
-    )
-
-    if norm != 0:
-        u = u / norm
-
-    flat_scores = torch.abs(
-        u
-    )
-
-    return reshape_scores(
-        flat_scores,
-        package,
-    )
+    return reshape_scores(direction.abs(), package)

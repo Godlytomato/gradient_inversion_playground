@@ -19,6 +19,13 @@ def min_svd_alignment(
     package: grad_package,
     selection_masks: list[torch.Tensor],
     context: transformation_context,
+    iterations: int = 5,
+    solve_iterations: int = 8,
+    damping: float = 1e-4,
+    tolerance: float = 1e-4,
+    exact_max_elements: int = 200000,
+    exact_max_input_size: int = 64,
+    rank_policy: str = "error",
 ) -> list[torch.Tensor]:
 
     indices = selected_indices(
@@ -34,7 +41,9 @@ def min_svd_alignment(
 
     # u is the singular direction in gradient space
     _, u, _ = min_singular_direction(
-        context
+        context, iterations=iterations, solve_iterations=solve_iterations,
+        damping=damping, tolerance=tolerance, exact_max_elements=exact_max_elements,
+        exact_max_input_size=exact_max_input_size, rank_policy=rank_policy,
     )
 
     direction = u[

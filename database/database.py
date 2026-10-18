@@ -20,23 +20,24 @@ def run_exists(
     run_hash: str,
 ) -> bool:
     """
-    Return True if a run with this hash already exists.
+    Return True only for a terminal experiment of this versioned configuration.
+
+    Error/interrupted rows are preserved and retried as new attempts. Historical
+    unprefixed hashes remain a separate protocol and do not suppress v2 runs.
     """
 
     connection = get_connection()
 
     try:
 
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(runs)")}
+        if not columns:
+            return False
+        identity = "(run_hash = ? OR config_hash = ?)" if "config_hash" in columns else "run_hash = ?"
+        parameters = (run_hash, run_hash) if "config_hash" in columns else (run_hash,)
         row = connection.execute(
-            """
-            SELECT 1
-            FROM runs
-            WHERE run_hash = ?
-            LIMIT 1
-            """,
-            (
-                run_hash,
-            ),
+            f"SELECT 1 FROM runs WHERE {identity} AND outcome IN ('success', 'failure') LIMIT 1",
+            parameters,
         ).fetchone()
 
         return row is not None
@@ -60,10 +61,21 @@ def create_run(
 
     try:
 
+        connection.execute("BEGIN IMMEDIATE")
+        previous = connection.execute(
+            "SELECT attempt, outcome FROM runs WHERE config_hash = ? OR run_hash = ? ORDER BY attempt DESC",
+            (run_data["run_hash"], run_data["run_hash"]),
+        ).fetchall()
+        if any(outcome in {"success", "failure"} for _, outcome in previous):
+            raise ValueError("This configuration already has a completed experiment")
+        attempt = max((row[0] for row in previous), default=0) + 1
+        identity = run_data["run_hash"] if attempt == 1 else f'{run_data["run_hash"]}:attempt:{attempt}'
         cursor = connection.execute(
             """
             INSERT INTO runs (
                 run_hash,
+                config_hash,
+                attempt,
                 name,
                 model,
                 dataset,
@@ -74,10 +86,12 @@ def create_run(
                 defense_name,
                 raw_description
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                identity,
                 run_data["run_hash"],
+                attempt,
                 run_data["name"],
                 run_data["model"],
                 run_data["dataset"],
@@ -134,6 +148,7 @@ def finish_run(
     run_id: int,
     outcome: str,
     best_reconstruction_hash: str | None = None,
+    summary: dict | None = None,
 ):
     """
     Store the final outcome and best reconstruction for a run.
@@ -148,12 +163,14 @@ def finish_run(
             UPDATE runs
             SET
                 outcome = ?,
-                best_reconstruction_hash = ?
+                best_reconstruction_hash = ?,
+                summary = ?
             WHERE id = ?
             """,
             (
                 outcome,
                 best_reconstruction_hash,
+                json.dumps(json_safe(summary or {}), allow_nan=False),
                 run_id,
             ),
         )
@@ -219,10 +236,7 @@ def add_log(
     Store one iteration's metrics.
     """
 
-    metrics_json = json.dumps(
-        metrics,
-        default=str,
-    )
+    metrics_json = json.dumps(json_safe(metrics), allow_nan=False)
 
     connection = get_connection()
 
@@ -355,7 +369,7 @@ def get_image(
     return torch.load(
         buffer,
         map_location="cpu",
-        weights_only=False,
+        weights_only=True,
     )
 
 
@@ -402,18 +416,33 @@ def get_run_images(
         ] = torch.load(
             buffer,
             map_location="cpu",
-            weights_only=False,
+            weights_only=True,
         )
 
     return images
-def save_run_metrics(run_hash: str, metrics: dict):
+def json_safe(value):
+    """Lossless finite JSON scalars plus explicit representations of infinity."""
+    import math
+    if isinstance(value, torch.Tensor):
+        return json_safe(value.detach().cpu().item() if value.numel() == 1 else value.detach().cpu().tolist())
+    if isinstance(value, dict):
+        return {str(key): json_safe(item) for key, item in value.items()}
+    if isinstance(value, (tuple, list)):
+        return [json_safe(item) for item in value]
+    if isinstance(value, float) and not math.isfinite(value):
+        return "Infinity" if value == float('inf') else "-Infinity" if value == -float('inf') else "NaN"
+    return value
+
+
+def save_run_metrics(run_hash: str | None = None, metrics: dict | None = None, *, run_id: int | None = None):
     import json
 
     connection = get_connection()
     try:
+        key = "id" if run_id is not None else "run_hash"
         cursor = connection.execute(
-            "UPDATE runs SET run_metrics = ? WHERE run_hash = ?",
-            (json.dumps(metrics), run_hash),
+            f"UPDATE runs SET run_metrics = ? WHERE {key} = ?",
+            (json.dumps(json_safe(metrics or {}), allow_nan=False), run_id if run_id is not None else run_hash),
         )
         if cursor.rowcount != 1:
             raise RuntimeError(f"Unknown run: {run_hash}")
