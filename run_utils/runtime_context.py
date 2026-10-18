@@ -17,3 +17,4 @@ class runtime_context:
     gradients: grad_package
     transformation_metrics: dict[str, float] = field(default_factory=dict)
     experiment_metadata: dict[str, Any] = field(default_factory=dict)
+    original_gradients: list[torch.Tensor] | None = None

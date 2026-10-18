@@ -117,6 +117,9 @@ subsequent continuation fixes, numerical checks and remaining limits.
 The [proof and ResNet audit](docs/LOWER_BOUND_AUDIT.md) checks the supplied
 derivation and explains why its exact-gradient-match and smoothness assumptions
 are not established for the current noisy ReLU ResNet experiments.
+The corrected [residual-aware bound](docs/RESIDUAL_BOUND.md) removes the exact-fit
+requirement and reports conditional results using each saved image's actual
+gradient residual. ReLU smoothness and supplied constants remain uncertified.
 
 ## Numerical limits and reporting
 
@@ -150,19 +153,25 @@ successful defense.
 
 Old YAML files keep their explicit solver limits. For a reference-scaling run,
 `transform.parameters.scaling.parameters.reference_max_iterations` increases the
-reference-direction cap, and `svd_max_iterations` in that same mapping increases
-the lower-bound spectral-norm cap. Ranking and construction use their own
+reference-direction cap. `svd_max_iterations` increases the spectral-norm cap
+only for `legacy_proof_v1`; the corrected calibration needs no maximum SVD.
+Ranking and construction use their own
 `max_iterations` parameters. Raising a cap keeps the residual tolerance unchanged
 and still permits a checked numerical error if the solve does not converge.
 
-Lower-bound feasibility uses supplied/estimated constants. Its saved diagnostics
-include the target, budget, residual and `certified=False`; empirical constants
+Lower-bound calibration uses `directional_residual_v1` and explicitly covers
+raw gradient residuals up to `residual_l2 + residual_fraction * noise_l2`
+(defaults 0 and 0.1). Measured residuals and conditional bounds for the saved
+images appear in the final summary's `experiment_metadata.reconstruction_bounds`.
+Old YAML is upgraded in memory before hashing so historical bound results cannot
+suppress corrected runs; the files and existing database rows are preserved.
+Saved diagnostics include target, budget, residual condition and
+`certified=False`; empirical constants
 and attack failure do **not** prove a guaranteed privacy bound. An `INFEASIBLE`
 warning means the requested target cannot be established under those constants
 and perturbation budget. The attack continues with a bounded best-effort
 perturbation, recorded as `infeasible_best_effort`; this does not certify MSE 0.02.
-Minimum-direction
-convergence on full CIFAR-shaped models, full attack-success sweeps, GPU execution,
+Minimum-direction convergence on full CIFAR-shaped models, full attack-success sweeps, GPU execution,
 training utility and external paper replication remain separate validation work.
 
 The heatmap aggregates completed attempts within comparable model/data/evaluation

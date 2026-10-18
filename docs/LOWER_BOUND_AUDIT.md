@@ -1,5 +1,9 @@
 # Lower-bound mathematics and ResNet audit
 
+The subsequent [residual-aware implementation](RESIDUAL_BOUND.md) replaces the
+default exact-fit calibration. This audit records the earlier formula and its
+scope; the ReLU/constant limitations continue to apply to conditional results.
+
 Reviewed October 18, 2026, against commit `fb1b676` and the subsequently supplied
 `proofs.docx`. This review separates execution readiness from mathematical
 validity. The earlier smoke tests verified batch continuation and numerical

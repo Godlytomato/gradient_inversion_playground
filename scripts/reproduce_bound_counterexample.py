@@ -50,6 +50,7 @@ def reproduce():
             [torch.tensor(1., dtype=torch.float64)],
             [torch.tensor(True)], context,
             target_error=.02, mu_j=1., mu_j_method="manual",
+            bound_method="legacy_proof_v1",
         )[0]
     observed = float(gradient.squeeze() + noise)
     # g(x) = 9.995 + 0.5*(x-0.4)^2. If y < min(g), squared

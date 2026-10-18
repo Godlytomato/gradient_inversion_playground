@@ -55,6 +55,7 @@ class LowerBoundTests(unittest.TestCase):
             output = lower_bound_threshold(
                 self.package, self.noise, self.mask, self.context,
                 target_error=.01, mu_j=10., mu_j_method="manual", max_scale=10.,
+                bound_method="legacy_proof_v1",
             )
         actual = float(output[0].norm())
         self.assertAlmostEqual(actual, expected, places=12)
@@ -69,6 +70,7 @@ class LowerBoundTests(unittest.TestCase):
             output = lower_bound_threshold(
                 self.package, self.noise, self.mask, self.context,
                 target_error=.02, mu_j=10., mu_j_method="manual", max_scale=10.,
+                bound_method="legacy_proof_v1",
             )
         self.assertAlmostEqual(float(output[0].norm()), 2+1/math.sqrt(3), places=6)
         diagnostic = self.context.numerical_diagnostics["lower_bound"]
@@ -80,7 +82,8 @@ class LowerBoundTests(unittest.TestCase):
         with patch(BOUND_MODULE+".max_singular_direction", side_effect=RuntimeError("not converged")):
             with self.assertRaisesRegex(RuntimeError, "not converged"):
                 lower_bound_threshold(self.package, self.noise, self.mask, self.context,
-                                      target_error=.02, mu_j=.1, mu_j_method="manual")
+                                      target_error=.02, mu_j=.1, mu_j_method="manual",
+                                      bound_method="legacy_proof_v1")
         diagnostic = self.context.numerical_diagnostics["lower_bound"]
         self.assertEqual(diagnostic["status"], "numerical_error")
         self.assertEqual(diagnostic["failed_stage"], "estimating_spectral_norm")
@@ -104,7 +107,7 @@ class LowerBoundTests(unittest.TestCase):
 
     def test_reference_rejects_invalid_directions_and_preserves_extreme_finite_norms(self):
         context, package = self.geometry(torch.float32)
-        settings = dict(target_error=.02, mu_j=0., mu_j_method="manual", max_scale=1.)
+        settings = dict(target_error=.02, mu_j=0., mu_j_method="manual", max_scale=1., residual_fraction=0.)
         for magnitude in (1e-40, 1e30):
             with self.subTest(magnitude=magnitude), contextlib.redirect_stdout(io.StringIO()):
                 output = max_svd_reference_scale(
@@ -131,6 +134,47 @@ class LowerBoundTests(unittest.TestCase):
                                             self.mask, context, target_error=.02)
         self.assertEqual(context.numerical_diagnostics["max_svd_reference_scale"]["status"],
                          "nonfinite_scaled_noise")
+
+    def test_corrected_calibration_needs_no_svd_and_preserves_noise_direction(self):
+        with patch(BOUND_MODULE+".max_singular_direction", side_effect=AssertionError("unneeded SVD")):
+            output = lower_bound_threshold(self.package, self.noise, self.mask, self.context,
+                                           target_error=.02, mu_j=0., mu_j_method="manual")
+        expected = 2*math.sqrt(2*.02)/.9
+        self.assertAlmostEqual(float(output[0][0]), expected, places=14)
+        diagnostic = self.context.numerical_diagnostics['lower_bound']
+        self.assertEqual(diagnostic['status'], 'conditional_target_calibrated')
+        self.assertEqual(diagnostic['residual_fraction'], .1)
+        self.assertFalse(diagnostic['residual_condition_verified'])
+
+    def test_corrected_calibration_retains_directional_failure_stage(self):
+        with patch(BOUND_MODULE+".jacobian_transpose_vector_product", side_effect=RuntimeError('invalid VJP')):
+            with self.assertRaisesRegex(RuntimeError, 'invalid VJP'):
+                lower_bound_threshold(self.package, self.noise, self.mask, self.context,
+                                      target_error=.02, mu_j=.1, mu_j_method="manual")
+        self.assertEqual(self.context.numerical_diagnostics['lower_bound']['failed_stage'],
+                         'estimating_directional_gain')
+
+    def test_corrected_calibration_enforces_budget_and_rejects_chained_baseline(self):
+        with self.assertWarnsRegex(RuntimeWarning, 'INFEASIBLE'):
+            output = lower_bound_threshold(self.package, self.noise, self.mask, self.context,
+                                           target_error=.02, mu_j=.1, mu_j_method="manual", max_scale=.01)
+        self.assertAlmostEqual(float(output[0].norm()), .01*math.sqrt(5), places=14)
+        self.assertFalse(self.context.numerical_diagnostics['lower_bound']['calibration_target_met'])
+        self.context.original_gradients = [self.package.grads[0]-1]
+        with self.assertRaisesRegex(ValueError, 'precede other'):
+            lower_bound_threshold(self.package, self.noise, self.mask, self.context,
+                                  target_error=.02, mu_j=.1, mu_j_method="manual")
+
+    def test_affine_empirical_zero_variation_is_an_observation_not_an_error(self):
+        output = lower_bound_threshold(self.package, self.noise, self.mask, self.context,
+                                      target_error=.02, mu_j_method="empirical",
+                                      mu_j_points=1, mu_j_directions=1)
+        diagnostic = self.context.numerical_diagnostics['lower_bound']
+        self.assertEqual(diagnostic['mu_j'], 0.)
+        self.assertEqual(self.context.numerical_diagnostics['jacobian_variation']['status'],
+                         'zero_observed_variation')
+        self.assertFalse(diagnostic['certified'])
+        self.assertGreater(float(output[0].norm()), 0.)
 
 
 if __name__ == "__main__":

@@ -25,3 +25,4 @@ class transformation_context:
     device: torch.device | None = None
     target_mse: float | None = None
     numerical_diagnostics: dict[str, Any] = field(default_factory=dict)
+    original_gradients: list[torch.Tensor] | None = None

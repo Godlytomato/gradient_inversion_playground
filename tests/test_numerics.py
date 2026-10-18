@@ -181,14 +181,14 @@ class NumericalTests(unittest.TestCase):
         context, package = prescribed(torch.diag(torch.tensor([2., 1.])))
         masks = [torch.ones(2, dtype=torch.bool)]
         noise = [torch.tensor([1., 0.], dtype=torch.float64)]
-        settings = dict(target_error=.02, mu_j=0., mu_j_method="manual", max_scale=1.)
+        settings = dict(target_error=.02, mu_j=0., mu_j_method="manual", max_scale=1., residual_fraction=0.)
         with contextlib.redirect_stdout(io.StringIO()):
             output = lower_bound_threshold(package, noise, masks, context, **settings)
             reference = max_svd_reference_scale(package, [noise[0].flip(0)], masks, context, **settings)
         expected_norm = math.sqrt(2 * .02) * 4 / 2
         self.assertAlmostEqual(float(output[0].norm()), expected_norm, places=12)
         self.assertAlmostEqual(float(reference[0].norm()), expected_norm, places=12)
-        self.assertEqual(context.numerical_diagnostics["lower_bound"]["status"], "feasible_under_supplied_constants")
+        self.assertEqual(context.numerical_diagnostics["lower_bound"]["status"], "conditional_target_calibrated")
         self.assertFalse(context.numerical_diagnostics["lower_bound"]["certified"])
         json.dumps(context.numerical_diagnostics)
         with warnings.catch_warnings(record=True) as caught, contextlib.redirect_stdout(io.StringIO()):

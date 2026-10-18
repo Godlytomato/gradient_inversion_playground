@@ -1,5 +1,6 @@
 
 from run_def import grad_transform, function_package
+from run_utils.bound_settings import DEFAULT_BOUND_METHOD, bound_parameters
 
 from validation.implementations.defenses.defense_def import (
     defense_preset_def,
@@ -10,6 +11,9 @@ def uniform_noise_reference(
     target_error: float = 0.02,
     mu_j: float = 0.1,
     percent: float = 1.0,
+    bound_method: str = DEFAULT_BOUND_METHOD,
+    residual_l2: float = 0.0,
+    residual_fraction: float = 0.1,
 ) -> list[grad_transform]:
 
     if not 0.0 <= percent <= 1.0:
@@ -22,10 +26,10 @@ def uniform_noise_reference(
             "Target error must be positive"
         )
 
-    if mu_j <= 0:
-        raise ValueError(
-            "mu_j must be positive"
-        )
+    calibration_parameters = bound_parameters(
+        target_error=target_error, mu_j=mu_j, bound_method=bound_method,
+        residual_l2=residual_l2, residual_fraction=residual_fraction,
+    )
 
     return [
         grad_transform(
@@ -51,12 +55,7 @@ def uniform_noise_reference(
                     },
                     "scaling": {
                         "name": "max_svd_reference_scale",
-                        "parameters": {
-                            "target_error": target_error,
-                            "mu_j_method": "manual",
-                            "mu_j_debug": False,
-                            "mu_j": mu_j,
-                        },
+                        "parameters": calibration_parameters,
                     },
                 },
             ),
