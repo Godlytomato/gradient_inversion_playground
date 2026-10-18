@@ -144,32 +144,40 @@ def main(argv=None):
     parser.add_argument("--schedule", type=Path, default=Path("schedual"))
     parser.add_argument("--error-log", type=Path, default=Path("results/run-errors.jsonl"))
     parser.add_argument("--fail-fast", action="store_true", help="Stop immediately on a run error (debugging)")
+    parser.add_argument("--strict-errors", action="store_true", help="Exit with status 1 after the batch if any runs errored")
+    parser.add_argument("--tracebacks", action="store_true", help="Also print full error tracebacks to the console")
     args = parser.parse_args(argv)
     if not args.schedule.is_dir():
         parser.error(f"Schedule directory does not exist: {args.schedule}")
     setup_database()
-    paths = sorted(path for path in args.schedule.iterdir() if path.suffix in {".yaml", ".yml"})
+    paths = sorted(path for path in args.schedule.iterdir()
+                   if path.is_file() and path.suffix in {".yaml", ".yml"})
     completed = skipped = errors = 0
-    for path in paths:
+    for index, path in enumerate(paths, start=1):
         description = None
         progress = {"phase": "read_description"}
         try:
             description = read_run(str(path))
-            print(f"Starting run: {description.name}")
+            print(f"[{index}/{len(paths)}] Starting run: {description.name}", flush=True)
             result = execute_description(description, progress=progress)
             if result is None:
                 skipped += 1
             else:
                 completed += 1
+                print(f"[COMPLETE] {description.name}", flush=True)
         except Exception as error:
             errors += 1
-            print(f"[ERROR] {path.name} ({progress['phase']}): {type(error).__name__}: {error}", file=sys.stderr)
-            traceback.print_exc()
+            print(f"[ERROR] {path.name} ({progress['phase']}): {type(error).__name__}: {error}", file=sys.stderr, flush=True)
+            if args.tracebacks:
+                traceback.print_exc()
             record_error(description, error, progress, path, args.error_log)
             if args.fail_fast:
                 raise
-    print(f"Schedule finished: {completed} completed, {skipped} skipped, {errors} errors.")
-    return 1 if errors else 0
+            remaining = len(paths) - index
+            print(f"[CONTINUE] Error recorded; {remaining} scheduled run(s) remaining. "
+                  f"Traceback: {args.error_log}", flush=True)
+    print(f"Schedule finished: {completed} completed, {skipped} skipped, {errors} errors.", flush=True)
+    return 1 if args.strict_errors and errors else 0
 
 
 if __name__ == "__main__":

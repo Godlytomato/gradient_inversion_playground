@@ -75,7 +75,7 @@ class BatchErrorTests(unittest.TestCase):
             return original(grads, transformations, context)
 
         with self.batch([bad, healthy, stalled]) as (root, schedule), patch.object(runner, 'transformer', fail_one):
-            self.assertEqual(self.invoke(root, schedule), 1)
+            self.assertEqual(self.invoke(root, schedule), 0)
             with sqlite3.connect(connection.DB_PATH) as db:
                 rows = {name: (outcome, json.loads(summary)) for name, outcome, summary in
                         db.execute('SELECT name,outcome,summary FROM runs')}
@@ -93,7 +93,7 @@ class BatchErrorTests(unittest.TestCase):
             self.assertTrue(errors[0]['database_recorded'])
             self.assertIn('RuntimeError', errors[0]['traceback'])
             # A later launch retries the numerical error and skips normal failures.
-            self.assertEqual(self.invoke(root, schedule), 1)
+            self.assertEqual(self.invoke(root, schedule), 0)
             with sqlite3.connect(connection.DB_PATH) as db:
                 self.assertEqual(db.execute('SELECT COUNT(*) FROM runs').fetchone()[0], 4)
 
@@ -102,7 +102,7 @@ class BatchErrorTests(unittest.TestCase):
         bad.attack.optimizer_description = function_package('adam', {'lr': -1.0})
         healthy = self.description('next-run')
         with self.batch([bad, healthy]) as (root, schedule):
-            self.assertEqual(self.invoke(root, schedule), 1)
+            self.assertEqual(self.invoke(root, schedule), 0)
             with sqlite3.connect(connection.DB_PATH) as db:
                 rows = db.execute('SELECT name,outcome FROM runs ORDER BY id').fetchall()
                 self.assertEqual(rows, [('optimizer-error', 'error'), ('next-run', 'failure')])
@@ -112,7 +112,7 @@ class BatchErrorTests(unittest.TestCase):
     def test_malformed_yaml_is_logged_and_next_run_executes(self):
         with self.batch([self.description('next-run')]) as (root, schedule):
             (schedule/'-invalid.yaml').write_text('observer: [\n')
-            self.assertEqual(self.invoke(root, schedule), 1)
+            self.assertEqual(self.invoke(root, schedule), 0)
             event = json.loads((root/'errors.jsonl').read_text())
             self.assertEqual(event['phase'], 'read_description')
             self.assertFalse(event['database_recorded'])
