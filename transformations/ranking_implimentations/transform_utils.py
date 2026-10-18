@@ -665,7 +665,12 @@ def _power_direction(context, images, iterations, tolerance=None, check_after=1)
             eigenvalue = torch.dot(v, candidate)
             if eigenvalue > 0:
                 relative = torch.linalg.vector_norm(candidate - eigenvalue * v) / eigenvalue
-                if relative <= tolerance:
+                # J.T(Jv) and the final J.T(Jv / ||Jv||) are evaluated
+                # separately. Float32 rounding can put their residuals on
+                # opposite sides of the requested tolerance. Leave room for
+                # that difference before stopping early; the final singular
+                # residual remains authoritative, including at the hard cap.
+                if relative <= tolerance * 0.5:
                     break
         v = candidate / norm
     image = jacobian_vector_product(v, context)
@@ -733,6 +738,7 @@ def max_singular_direction(
         "method": "matrix_free_power", "iterations": used_iterations,
         "initial_iterations": initial_iterations, "max_iterations": cap,
         "relative_tolerance": tolerance,
+        "power_proxy_tolerance": tolerance * 0.5,
         "spectral_norm_is_certified_upper_bound": False,
     }
     if float(sigma) == 0:

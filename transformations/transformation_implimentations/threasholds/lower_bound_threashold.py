@@ -79,6 +79,15 @@ def lower_bound_threshold(
     }
     record_numerical_diagnostic(context, "lower_bound", diagnostic)
 
+    def numerical_stage(name, calculation):
+        diagnostic["status"] = name
+        try:
+            return calculation()
+        except Exception as error:
+            diagnostic.update(status="numerical_error", failed_stage=name,
+                              error_type=type(error).__name__, message=str(error))
+            raise
+
     selected_noise = []
     for grad, noise, mask in zip(package.grads, noise_tensors, selection_masks):
         if grad.shape != noise.shape or noise.shape != mask.shape:
@@ -139,11 +148,11 @@ def lower_bound_threshold(
                     safety_factor=mu_j_safety_factor, seed=mu_j_seed,
                 )
                 print(f"radius={radius:.0e}, mu_j={float(estimate):.8g}")
-        mu = float(estimate_mu_j(
+        mu = float(numerical_stage("estimating_jacobian_variation", lambda: estimate_mu_j(
             context, radii=mu_j_radii, points=mu_j_points,
             directions=mu_j_directions,
             safety_factor=mu_j_safety_factor, seed=mu_j_seed,
-        ))
+        )))
     elif mu_j_method == "manual":
         if mu_j is None:
             raise ValueError("manual mu_j_method requires mu_j")
@@ -153,15 +162,17 @@ def lower_bound_threshold(
     if not math.isfinite(mu) or mu < 0:
         raise ValueError("mu_j must be finite and nonnegative")
 
-    sigma_value, _, _ = max_singular_direction(
+    diagnostic.update(mu_j=mu, target_l2=target_l2,
+                      gradient_norm=gnorm, absolute_budget=budget)
+    sigma_value, _, _ = numerical_stage("estimating_spectral_norm", lambda: max_singular_direction(
         context, iterations=svd_iterations, tolerance=svd_tolerance,
         max_iterations=svd_max_iterations,
-    )
+    ))
     sigma = float(sigma_value)
     if not math.isfinite(sigma) or sigma < 0:
         raise ValueError("Invalid estimated Jacobian spectral norm")
 
-    gain_value = jacobian_transpose_vector_product(d, context)
+    gain_value = numerical_stage("estimating_direction_effect", lambda: jacobian_transpose_vector_product(d, context))
     gain = float(torch.linalg.vector_norm(gain_value.detach().to(torch.float64)))
     if not math.isfinite(gain) or gain < 0:
         raise ValueError("Invalid directional Jacobian gain")

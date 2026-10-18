@@ -52,6 +52,27 @@ using database writers should first call `database.setup.setup_database()`.
 `python -m database.setup` is also non-destructive. Its explicit `--reset` flag
 deletes the database and results. Do not reset an open/in-use database.
 
+### Stop at the MSE target or when an attack stalls
+
+After generating your run YAMLs, apply this explicit MSE-stopping configuration:
+
+```bash
+.venv/bin/python scripts/set_mse_stopping.py schedual --target 0.02 --patience 200 --minimum-change 0.0001
+```
+
+It stops successfully when MSE is at most 0.02 and fails an attempt after 200
+iterations without a cumulative MSE improvement of at least 0.0001. Existing
+restart counts and iteration safety caps are retained. The saved/returned image
+is selected by best MSE so a successful reconstruction is not replaced by an
+earlier image with lower gradient-matching loss. This mode explicitly uses true
+image MSE for stopping and selection.
+
+The script validates every changed description before writing, backs up the
+original YAMLs as `*.before-mse-stop.bak`, and accepts `--dry-run` to preview.
+It updates generated YAML files, not the Python preset builders: rerun it after
+regenerating a schedule. Stop active experiments before applying new schedules;
+already loaded runs will not change. Stored database results are not modified.
+
 ## What version 2 measures
 
 - Victim and auxiliary tensors are raw `[0,1]` pixels. Models are randomly
@@ -91,8 +112,30 @@ YAML using a global draft is rejected with regeneration guidance.
 
 See [pre-push validation](docs/PREPUSH_VALIDATION.md) for clean-install,
 real-CIFAR runner and results-viewer checks and their limits.
+See the [batch runner and lower-bound review](docs/RUNNER_READINESS.md) for the
+subsequent continuation fixes, numerical checks and remaining limits.
 
 ## Numerical limits and reporting
+
+The batch runner continues after individual run errors by default:
+
+```bash
+.venv/bin/python run.py --schedule schedual
+```
+
+Attacks that miss the target or stall remain completed `failure` outcomes.
+Numerical/setup exceptions are saved as `error` attempts, with tracebacks appended
+to `results/run-errors.jsonl`; subsequent YAML files still execute. Restarting the
+same schedule skips completed successes/failures and retries error attempts.
+The process exits normally after finishing the schedule even if individual runs
+errored, so expected numerical failures do not stop a surrounding shell script.
+Use `--strict-errors` to return status 1 after completing a batch with errors,
+`--fail-fast` to stop immediately when debugging, or `--error-log PATH` to change
+the log. Full tracebacks are always stored in that log; `--tracebacks` also prints
+them to the console. Progress messages show when each run completes or the batch
+continues after an error.
+Keyboard interrupts still stop the batch. Database initialization errors stop
+before the batch starts.
 
 Singular directions carry convergence/rank diagnostics. Small problems use a
 bounded exact SVD; larger ones use checked matrix-free estimates. Maximum-SVD
@@ -102,9 +145,20 @@ but the implementation will not replace an unresolved minimum direction with
 normalized maximum-direction leakage. Do not count a rejected experiment as a
 successful defense.
 
+Old YAML files keep their explicit solver limits. For a reference-scaling run,
+`transform.parameters.scaling.parameters.reference_max_iterations` increases the
+reference-direction cap, and `svd_max_iterations` in that same mapping increases
+the lower-bound spectral-norm cap. Ranking and construction use their own
+`max_iterations` parameters. Raising a cap keeps the residual tolerance unchanged
+and still permits a checked numerical error if the solve does not converge.
+
 Lower-bound feasibility uses supplied/estimated constants. Its saved diagnostics
 include the target, budget, residual and `certified=False`; empirical constants
-and attack failure do **not** prove a guaranteed privacy bound. Minimum-direction
+and attack failure do **not** prove a guaranteed privacy bound. An `INFEASIBLE`
+warning means the requested target cannot be established under those constants
+and perturbation budget. The attack continues with a bounded best-effort
+perturbation, recorded as `infeasible_best_effort`; this does not certify MSE 0.02.
+Minimum-direction
 convergence on full CIFAR-shaped models, full attack-success sweeps, GPU execution,
 training utility and external paper replication remain separate validation work.
 
