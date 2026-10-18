@@ -1,0 +1,32 @@
+database/*.db
+database/*.db-journal
+database/*.db-shm
+database/*.db-wal
+__pycache__/*.pyc
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+tfd/
+.pytest_cache/
+
+# Datasets
+data/cifar-10-python.tar.gz
+data/cifar-10-batches-py/
+
+# Database and results
+database/*.db
+results/
+temp_logs/
+temp_images/
+
+# Checkpoints and model weights
+checkpoint/
+*.pth
+*.pt
+
+# Local configuration and secrets
+.env
+.env.*
+.DS_Store

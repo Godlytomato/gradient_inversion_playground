@@ -1,0 +1,2537 @@
+--- a/change_target.py
++++ b/change_target.py
+@@ -8,7 +8,7 @@
+ LOG = ROOT / "target_changes.diff"
+ MANIFEST = BACKUP / "manifest.json"
+ 
+-OLD = "0.0001"
++OLD = "0.02"
+ NEW = "0.02"
+ 
+ def apply():
+--- a/defense_backups/20261010_194601/gaussian_noise_reference.py
++++ b/defense_backups/20261010_194601/gaussian_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def gaussian_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+@@ -52,7 +52,7 @@
+                     "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "manual",
+                             "mu_j": 1.0,
+                         },
+--- a/defense_backups/20261010_194601/graddefense_reference.py.py
++++ b/defense_backups/20261010_194601/graddefense_reference.py.py
+@@ -9,7 +9,7 @@
+ def graddefense_reference(
+     slices_num: int = 10,
+     perturb_slices_num: int = 2,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     seed: int = 0,
+ ) -> list[grad_transform]:
+@@ -61,7 +61,7 @@
+                      "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "manual",
+                             "mu_j": 1.0,
+                         },
+--- a/defense_backups/manual_mu_j_20261010_202536/gaussian_noise_reference.py
++++ b/defense_backups/manual_mu_j_20261010_202536/gaussian_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def gaussian_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+@@ -52,7 +52,7 @@
+                     "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "empirical",
+                             "mu_j_debug": True,
+                             "mu_j": mu_j,
+--- a/defense_backups/manual_mu_j_20261010_202536/graddefense_reference.py.py
++++ b/defense_backups/manual_mu_j_20261010_202536/graddefense_reference.py.py
+@@ -9,7 +9,7 @@
+ def graddefense_reference(
+     slices_num: int = 10,
+     perturb_slices_num: int = 2,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     seed: int = 0,
+ ) -> list[grad_transform]:
+@@ -61,7 +61,7 @@
+                      "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "empirical",
+                             "mu_j_debug": True,
+                             "mu_j": mu_j,
+--- a/defense_backups/manual_mu_j_20261010_202536/laplace_noise_reference.py
++++ b/defense_backups/manual_mu_j_20261010_202536/laplace_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def laplace_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/defense_backups/manual_mu_j_20261010_202536/max_svd_lowerbound.py
++++ b/defense_backups/manual_mu_j_20261010_202536/max_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def max_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     iterations: int = 10,
+ ) -> list[grad_transform]:
+--- a/defense_backups/manual_mu_j_20261010_202536/min_svd_lowerbound.py
++++ b/defense_backups/manual_mu_j_20261010_202536/min_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def min_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     iterations: int = 5,
+     solve_iterations: int = 8,
+--- a/defense_backups/manual_mu_j_20261010_202536/min_svd_noise_reference.py
++++ b/defense_backups/manual_mu_j_20261010_202536/min_svd_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def min_svd_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 0.1,
+     iterations: int = 5,
+--- a/defense_backups/manual_mu_j_20261010_202536/uniform_noise_reference.py
++++ b/defense_backups/manual_mu_j_20261010_202536/uniform_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def uniform_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/gaussian_noise_reference.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/gaussian_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def gaussian_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+@@ -53,7 +53,7 @@
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+                             "mu_j_method": "manual",
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "manual",
+                             "mu_j": 1.0,
+                         },
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/graddefense_reference.py.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/graddefense_reference.py.py
+@@ -9,7 +9,7 @@
+ def graddefense_reference(
+     slices_num: int = 10,
+     perturb_slices_num: int = 2,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     seed: int = 0,
+ ) -> list[grad_transform]:
+@@ -62,7 +62,7 @@
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+                             "mu_j_method": "manual",
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "manual",
+                             "mu_j": 1.0,
+                         },
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/laplace_noise_reference.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/laplace_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def laplace_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/max_svd_lowerbound.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/max_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def max_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     iterations: int = 10,
+ ) -> list[grad_transform]:
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/min_svd_lowerbound.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/min_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def min_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     iterations: int = 5,
+     solve_iterations: int = 8,
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/min_svd_noise_reference.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/min_svd_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def min_svd_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 0.1,
+     iterations: int = 5,
+--- a/defense_backups/manual_mu_j_fix_20261010_194639/uniform_noise_reference.py
++++ b/defense_backups/manual_mu_j_fix_20261010_194639/uniform_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def uniform_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/defense_backups/mu_j_debug_20261010_201143/gaussian_noise_reference.py
++++ b/defense_backups/mu_j_debug_20261010_201143/gaussian_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def gaussian_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+@@ -52,7 +52,7 @@
+                     "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "empirical",
+                             "mu_j": mu_j,
+                         },
+--- a/defense_backups/mu_j_debug_20261010_201143/graddefense_reference.py.py
++++ b/defense_backups/mu_j_debug_20261010_201143/graddefense_reference.py.py
+@@ -9,7 +9,7 @@
+ def graddefense_reference(
+     slices_num: int = 10,
+     perturb_slices_num: int = 2,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     seed: int = 0,
+ ) -> list[grad_transform]:
+@@ -61,7 +61,7 @@
+                      "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "empirical",
+                             "mu_j": mu_j,
+                         },
+--- a/defense_backups/mu_j_debug_20261010_201143/laplace_noise_reference.py
++++ b/defense_backups/mu_j_debug_20261010_201143/laplace_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def laplace_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/defense_backups/mu_j_debug_20261010_201143/max_svd_lowerbound.py
++++ b/defense_backups/mu_j_debug_20261010_201143/max_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def max_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     iterations: int = 10,
+ ) -> list[grad_transform]:
+--- a/defense_backups/mu_j_debug_20261010_201143/min_svd_lowerbound.py
++++ b/defense_backups/mu_j_debug_20261010_201143/min_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def min_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     iterations: int = 5,
+     solve_iterations: int = 8,
+--- a/defense_backups/mu_j_debug_20261010_201143/min_svd_noise_reference.py
++++ b/defense_backups/mu_j_debug_20261010_201143/min_svd_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def min_svd_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 0.1,
+     iterations: int = 5,
+--- a/defense_backups/mu_j_debug_20261010_201143/uniform_noise_reference.py
++++ b/defense_backups/mu_j_debug_20261010_201143/uniform_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def uniform_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 1.0,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/schedual/beyond_gradients__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/beyond_gradients__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/beyond_gradients__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/beyond_gradients__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/beyond_gradients__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/beyond_gradients__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/beyond_gradients__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/beyond_gradients__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/beyond_gradients__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/beyond_gradients__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/dlg__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/dlg__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/dlg__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/dlg__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/dlg__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/dlg__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/dlg__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/dlg__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/dlg__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/dlg__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/dlg__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/dlg__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/dlg__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/dlg__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/dlg__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/dlg__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/dlg__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/dlg__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/dlg__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/dlg__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/dlg__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/dlg__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/dlg__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/dlg__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/dlg__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/e2egi__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/e2egi__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/e2egi__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/e2egi__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/e2egi__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/e2egi__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/e2egi__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/e2egi__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/e2egi__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/e2egi__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/e2egi__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/e2egi__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/e2egi__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/e2egi__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/e2egi__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/e2egi__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/e2egi__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/e2egi__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/e2egi__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/e2egi__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/e2egi__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/e2egi__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/e2egi__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/e2egi__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/e2egi__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/fedleak__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/fedleak__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/fedleak__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/fedleak__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/fedleak__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/fedleak__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/fedleak__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/fedleak__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/fedleak__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/fedleak__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/fedleak__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/fedleak__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/fedleak__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/fedleak__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/fedleak__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/fedleak__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/fedleak__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/fedleak__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/fedleak__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/fedleak__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/fedleak__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/fedleak__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/fedleak__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/fedleak__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/fedleak__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/geiping__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/geiping__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/geiping__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/geiping__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/geiping__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/geiping__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/geiping__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/geiping__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/geiping__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/geiping__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/geiping__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/geiping__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/geiping__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/geiping__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/geiping__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/geiping__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/geiping__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/geiping__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/geiping__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/geiping__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/geiping__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/geiping__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/geiping__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/geiping__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/geiping__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gi_pip__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gi_pip__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gi_pip__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gi_pip__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gi_pip__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gi_pip__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gi_pip__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gi_pip__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gi_pip__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gradinversion__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gradinversion__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gradinversion__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gradinversion__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gradinversion__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/gradinversion__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/gradinversion__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/gradinversion__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/gradinversion__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/hf_gradinv__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/hf_gradinv__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/hf_gradinv__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/hf_gradinv__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/hf_gradinv__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/hf_gradinv__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/hf_gradinv__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/hf_gradinv__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/hf_gradinv__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__gaussian_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/idlg__gaussian_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__gaussian_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/idlg__gaussian_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__i2f_pruning__lenet5__cifar10.yaml
++++ b/schedual/idlg__i2f_pruning__lenet5__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/idlg__i2f_pruning__resnet18__cifar10.yaml
++++ b/schedual/idlg__i2f_pruning__resnet18__cifar10.yaml
+@@ -20,7 +20,7 @@
+     name: exact_i2f
+     parameters:
+       samples: 10
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/idlg__laplace_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/idlg__laplace_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__laplace_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/idlg__laplace_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__max_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/idlg__max_svd_lower_bound__lenet5__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__max_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/idlg__max_svd_lower_bound__resnet18__cifar10.yaml
+@@ -33,7 +33,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__min_svd_lower_bound__lenet5__cifar10.yaml
++++ b/schedual/idlg__min_svd_lower_bound__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__min_svd_lower_bound__resnet18__cifar10.yaml
++++ b/schedual/idlg__min_svd_lower_bound__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: lower_bound_threshold
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__min_svd_noise__lenet5__cifar10.yaml
++++ b/schedual/idlg__min_svd_noise__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/idlg__min_svd_noise__resnet18__cifar10.yaml
++++ b/schedual/idlg__min_svd_noise__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/idlg__min_svd_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/idlg__min_svd_noise_reference__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__min_svd_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/idlg__min_svd_noise_reference__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+@@ -35,7 +35,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__min_svd_pruning__lenet5__cifar10.yaml
++++ b/schedual/idlg__min_svd_pruning__lenet5__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/idlg__min_svd_pruning__resnet18__cifar10.yaml
++++ b/schedual/idlg__min_svd_pruning__resnet18__cifar10.yaml
+@@ -21,7 +21,7 @@
+     parameters:
+       iterations: 5
+       solve_iterations: 8
+-      damping: 0.0001
++      damping: 0.02
+   draft_policy:
+     name: highest_draft
+     parameters:
+--- a/schedual/idlg__uniform_noise_reference__lenet5__cifar10.yaml
++++ b/schedual/idlg__uniform_noise_reference__lenet5__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/schedual/idlg__uniform_noise_reference__resnet18__cifar10.yaml
++++ b/schedual/idlg__uniform_noise_reference__resnet18__cifar10.yaml
+@@ -32,7 +32,7 @@
+       scaling:
+         name: max_svd_reference_scale
+         parameters:
+-          target_error: 0.0001
++          target_error: 0.02
+           mu_j_method: manual
+           mu_j_debug: false
+           mu_j: 0.1
+--- a/validation/implementations/defenses/gaussian_noise_reference.py
++++ b/validation/implementations/defenses/gaussian_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def gaussian_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+@@ -52,7 +52,7 @@
+                     "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "manual",
+                             "mu_j_debug": False,
+                             "mu_j": mu_j,
+--- a/validation/implementations/defenses/graddefense_reference.py.py
++++ b/validation/implementations/defenses/graddefense_reference.py.py
+@@ -9,7 +9,7 @@
+ def graddefense_reference(
+     slices_num: int = 10,
+     perturb_slices_num: int = 2,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     seed: int = 0,
+ ) -> list[grad_transform]:
+@@ -61,7 +61,7 @@
+                      "scaling": {
+                         "name": "max_svd_reference_scale",
+                         "parameters": {
+-                            "target_error": 0.0001,
++                            "target_error": 0.02,
+                             "mu_j_method": "manual",
+                             "mu_j_debug": False,
+                             "mu_j": mu_j,
+--- a/validation/implementations/defenses/laplace_noise_reference.py
++++ b/validation/implementations/defenses/laplace_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def laplace_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
+--- a/validation/implementations/defenses/max_svd_lowerbound.py
++++ b/validation/implementations/defenses/max_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def max_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     iterations: int = 10,
+ ) -> list[grad_transform]:
+--- a/validation/implementations/defenses/min_svd_lowerbound.py
++++ b/validation/implementations/defenses/min_svd_lowerbound.py
+@@ -7,7 +7,7 @@
+ 
+ def min_svd_lower_bound(
+     percent: float = 0.1,
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     iterations: int = 5,
+     solve_iterations: int = 8,
+--- a/validation/implementations/defenses/min_svd_noise_reference.py
++++ b/validation/implementations/defenses/min_svd_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def min_svd_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     percent: float = 0.1,
+     iterations: int = 5,
+--- a/validation/implementations/defenses/uniform_noise_reference.py
++++ b/validation/implementations/defenses/uniform_noise_reference.py
+@@ -7,7 +7,7 @@
+ 
+ 
+ def uniform_noise_reference(
+-    target_error: float = 0.0001,
++    target_error: float = 0.02,
+     mu_j: float = 0.1,
+     percent: float = 1.0,
+ ) -> list[grad_transform]:
