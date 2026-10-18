@@ -4,6 +4,11 @@ Validated in the cloud CPU environment on October 18, 2026. These checks cover
 batch execution and numerical error handling; full-budget scientific sweeps and
 GPU execution were not performed.
 
+Subsequent [proof and ResNet review](LOWER_BOUND_AUDIT.md) found that the supplied
+conditional bound requires exact gradient matching and smoothness assumptions
+that these experiments do not establish. Execution checks below should not be
+read as validation of those mathematical assumptions.
+
 ## Corrections
 
 - Individual run errors previously produced exit status 1 after the schedule

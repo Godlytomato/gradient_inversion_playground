@@ -1,21 +1,13 @@
-"""Scale a gradient-space blur using the reconstruction-error lower bound.
+"""Conditional, residual-aware calibration of gradient perturbations.
 
-IMPORTANT: ``max_scale`` is the MAXIMUM RELATIVE L2 perturbation, NOT an
-absolute multiplier. For nonzero g0, the absolute scale limit is
-    max_absolute_scale = max_scale * ||g0||_2.
-Thus max_scale=0.2 means a blur with L2 norm at most 20% of ||g0||_2.
-The default max_scale=1000.0 is retained for backward compatibility, but
-is a very large budget: choose a smaller value in your configuration.
+The default directional Taylor bound allows nonzero gradient-matching residual.
+It uses one J_g.T*d product and no maximum-SVD solve. Uniform smoothness and
+the declared residual condition remain assumptions, not certified facts for a
+ReLU model. Post-attack evaluation uses the measured residual separately.
 
-The function signature and return type (list[torch.Tensor]) are unchanged.
-On an INFEASIBLE target, it emits a RuntimeWarning and returns the best-effort
-blur within the budget (the scale maximizing the bound's feasibility margin).
-THIS DOES NOT GUARANTEE THE REQUESTED ERROR. Check the warning/logs.
-An empirical estimate of mu_j or sigma is not a mathematical certificate.
-
-Conventions: J_g maps input-space perturbations to gradient-space perturbations;
-this implementation uses ||J_g^T d|| for gradient-space direction d. Ensure
-that this matches the Jacobian in the theoretical inequality.
+``max_scale`` is a relative L2 budget: max_scale*||original gradients||.
+Infeasible targets return bounded best effort with explicit diagnostics. The
+previous exact-fit formula is available only as ``legacy_proof_v1``.
 """
 
 import math
@@ -33,7 +25,7 @@ from transformations.ranking_implimentations.transform_utils import (
 from transformations.ranking_implimentations.jacobian_variation import estimate_mu_j
 
 
-def lower_bound_threshold(
+def _legacy_lower_bound_threshold(
     package: grad_package,
     noise_tensors: list[torch.Tensor],
     selection_masks: list[torch.Tensor],
@@ -75,7 +67,8 @@ def lower_bound_threshold(
     diagnostic = {
         "status": "initializing", "target_mse": target_error,
         "max_relative_l2": max_scale, "mu_j_method": mu_j_method,
-        "certified": False,
+        "certified": False, "bound_method": "legacy_proof_v1",
+        "requires_exact_gradient_match": True,
     }
     record_numerical_diagnostic(context, "lower_bound", diagnostic)
 
@@ -263,3 +256,147 @@ def lower_bound_threshold(
         sigma_method=getattr(context, "numerical_diagnostics", {}).get("max_svd", {}).get("method"),
     )
     return [n * scale for n in normalized_noise]
+
+
+def lower_bound_threshold(
+    package, noise_tensors, selection_masks, context, target_error,
+    mu_j=None, mu_j_method="empirical", mu_j_radii=(1e-3, 1e-2),
+    mu_j_points=4, mu_j_directions=4, mu_j_safety_factor=1.5,
+    mu_j_seed=0, mu_j_debug=False, initial_scale=0.001, growth_factor=2.0,
+    max_scale=1000.0, refine_iterations=40, svd_iterations=None,
+    svd_tolerance=1e-4, svd_max_iterations=None,
+    bound_method="directional_residual_v1", residual_l2=0.0,
+    residual_fraction=0.1,
+):
+    """Conditional calibration allowing a nonzero raw gradient residual.
+
+    With a=||eta||, k=||Dg(x0).T*(eta/a)|| and E=||xhat-x0||,
+    a-eps <= k*E + mu_J*E**2/2. Calibrate reconstructions satisfying
+    eps <= residual_l2 + residual_fraction*a; this is an explicit condition,
+    not a promise that the attack meets it. Uniform smoothness/constants are
+    NOT certified for arbitrary models, especially ReLU networks.
+
+    This method needs one VJP, not a maximum singular-direction solve.
+    Old search/SVD keywords are retained for explicit legacy compatibility.
+    """
+    from transformations.reconstruction_bound import required_noise_l2, residual_aware_bound
+
+    if bound_method == "legacy_proof_v1":
+        return _legacy_lower_bound_threshold(
+            package, noise_tensors, selection_masks, context, target_error,
+            mu_j, mu_j_method, mu_j_radii, mu_j_points, mu_j_directions,
+            mu_j_safety_factor, mu_j_seed, mu_j_debug, initial_scale,
+            growth_factor, max_scale, refine_iterations, svd_iterations,
+            svd_tolerance, svd_max_iterations,
+        )
+    if bound_method != "directional_residual_v1":
+        raise ValueError(f"Unknown lower-bound method: {bound_method}")
+    # Validate residual conditions even for trivial targets/directions.
+    required_noise_l2(0., 1., 0., residual_l2, residual_fraction)
+    if not math.isfinite(target_error) or target_error < 0:
+        raise ValueError("target_error (MSE) must be finite and nonnegative")
+    if not math.isfinite(max_scale) or max_scale < 0:
+        raise ValueError("max_scale must be finite and nonnegative")
+    if (not package.grads or len(package.grads) != len(noise_tensors)
+            or len(noise_tensors) != len(selection_masks)):
+        raise ValueError("Gradient, noise, and mask lists must match and be nonempty")
+    diagnostic = {
+        "status": "initializing", "bound_method": bound_method,
+        "target_mse": target_error, "max_relative_l2": max_scale,
+        "residual_l2": residual_l2, "residual_fraction": residual_fraction,
+        "residual_condition": "raw_gradient_l2 <= residual_l2 + residual_fraction * noise_l2",
+        "certified": False, "mu_j_method": mu_j_method,
+        "uniform_smoothness_verified": False,
+        "residual_condition_verified": False,
+        "nonsmooth_module_types": sorted({type(m).__name__ for m in context.model.modules()
+            if isinstance(m, (torch.nn.ReLU, torch.nn.ReLU6, torch.nn.LeakyReLU,
+                              torch.nn.PReLU, torch.nn.MaxPool1d,
+                              torch.nn.MaxPool2d, torch.nn.MaxPool3d))}),
+    }
+    record_numerical_diagnostic(context, "lower_bound", diagnostic)
+    selected = []
+    for grad, noise, mask in zip(package.grads, noise_tensors, selection_masks):
+        if grad.shape != noise.shape or noise.shape != mask.shape:
+            raise ValueError("Gradient, noise, and mask shapes must match")
+        value = torch.where(mask.bool(), noise, torch.zeros_like(noise))
+        if not torch.isfinite(value).all() or not torch.isfinite(grad).all():
+            raise ValueError("Selected noise and original gradients must be finite")
+        selected.append(value)
+    zeros = lambda: [torch.zeros_like(n) for n in selected]
+    if target_error == 0:
+        diagnostic.update(status="zero_target", applied_l2=0.0)
+        return zeros()
+    original = getattr(context, "original_gradients", None)
+    if original is not None and any(not torch.equal(g, g0) for g, g0 in zip(package.grads, original)):
+        raise ValueError("Conditional bound calibration must precede other gradient modifications")
+    diagnostic["baseline_verified"] = original is not None
+    norm = float(torch.linalg.vector_norm(torch.cat([n.reshape(-1).to(torch.float64) for n in selected])))
+    gnorm = float(torch.linalg.vector_norm(torch.cat([g.reshape(-1).to(torch.float64) for g in package.grads])))
+    if not math.isfinite(norm) or not math.isfinite(gnorm):
+        raise ValueError("Noise and gradient norms must be finite")
+    budget = max_scale * gnorm
+    if not math.isfinite(budget):
+        raise ValueError("Relative L2 budget overflowed")
+    if norm == 0 or budget == 0:
+        diagnostic.update(status="zero_direction" if norm == 0 else "zero_budget", applied_l2=0.0)
+        warnings.warn("Conditional bound: zero direction/budget; target not calibrated", RuntimeWarning, stacklevel=2)
+        return zeros()
+    direction = [(n.to(torch.float64) / norm).to(n.dtype) for n in selected]
+    images, _ = batch_tensors(context)
+    radius = math.sqrt(images.numel() * target_error)
+    diagnostic.update(target_l2=radius, gradient_norm=gnorm, absolute_budget=budget)
+
+    def stage(name, function):
+        diagnostic["status"] = name
+        try:
+            return function()
+        except Exception as error:
+            diagnostic.update(status="numerical_error", failed_stage=name,
+                              error_type=type(error).__name__, message=str(error))
+            raise
+
+    if mu_j_method == "manual":
+        if mu_j is None:
+            raise ValueError("manual mu_j_method requires mu_j")
+        mu = float(mu_j)
+    elif mu_j_method == "empirical":
+        mu = float(stage("estimating_jacobian_variation", lambda: estimate_mu_j(
+            context, radii=mu_j_radii, points=mu_j_points, directions=mu_j_directions,
+            safety_factor=mu_j_safety_factor, seed=mu_j_seed,
+        )))
+    else:
+        raise ValueError("mu_j_method must be 'empirical' or 'manual'")
+    if not math.isfinite(mu) or mu < 0:
+        raise ValueError("mu_j must be finite and nonnegative")
+    diagnostic["mu_j"] = mu
+    effect = stage("estimating_directional_gain", lambda: jacobian_transpose_vector_product(
+        torch.cat([n.reshape(-1) for n in direction]).detach(), context))
+    gain = float(torch.linalg.vector_norm(effect.to(torch.float64)))
+    required = required_noise_l2(radius, gain, mu, residual_l2, residual_fraction)
+    diagnostic.update(direction_effect=gain, required_l2=required if required is None or math.isfinite(required) else None)
+    if required is None:
+        diagnostic.update(status="degenerate_constants", applied_l2=0.0)
+        warnings.warn("Conditional bound: zero gain and variation cannot calibrate positive error", RuntimeWarning, stacklevel=2)
+        return zeros()
+    scale = min(required, budget)
+    output = [(n.to(torch.float64) * scale).to(n.dtype) for n in direction]
+    if any(not torch.isfinite(n).all() for n in output):
+        raise ValueError("Calibrated noise cannot be represented in its original dtype")
+    applied = float(torch.linalg.vector_norm(torch.cat([n.reshape(-1).to(torch.float64) for n in output])))
+    eps_budget = residual_l2 + residual_fraction * applied
+    bound = residual_aware_bound(applied, eps_budget, gain, mu)
+    lower = bound["lower_bound_l2"]
+    calibrated = required <= budget and lower is not None and lower >= radius * (1 - 8 * torch.finfo(output[0].dtype).eps)
+    diagnostic.update(
+        status="conditional_target_calibrated" if calibrated else "infeasible_best_effort",
+        applied_l2=applied, relative_l2=applied / gnorm,
+        assumed_residual_l2=eps_budget, conditional_lower_bound_l2=lower,
+        conditional_lower_bound_mse=None if lower is None else lower * lower / images.numel(),
+        calibration_target_met=calibrated,
+        rounding_relative_tolerance=8 * torch.finfo(output[0].dtype).eps,
+    )
+    if not calibrated:
+        warnings.warn("Conditional bound: target INFEASIBLE within perturbation budget; using bounded best effort", RuntimeWarning, stacklevel=2)
+    print(f"[BOUND] method={bound_method} status={diagnostic['status']} mu_j={mu:.6g} "
+          f"gain={gain:.6g} applied_l2={applied:.6g} certified=False", flush=True)
+    return output

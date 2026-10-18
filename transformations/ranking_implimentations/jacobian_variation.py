@@ -58,6 +58,6 @@ def estimate_mu_j(context, radii=(1e-3, 1e-2), points=4, directions=4, safety_fa
         "status": "estimated" if largest else "zero_observed_variation",
     }
     record_numerical_diagnostic(context, "jacobian_variation", diagnostic)
-    if largest == 0:
-        raise ValueError("No Jacobian variation detected; try larger radii or provide manual mu_j")
+    # Zero is legitimate for an affine gradient map. It is an observation,
+    # not proof of a region-wide zero Lipschitz constant (especially at gates).
     return largest * safety_factor

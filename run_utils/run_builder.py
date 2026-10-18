@@ -2,6 +2,7 @@ import inspect
 import math
 
 from run_def import run_desc
+from run_utils.bound_settings import normalize_bound_settings
 from reconstruction.attack_registry import attack_registry
 from reconstruction.attack_def import attack_def
 
@@ -209,6 +210,7 @@ def resolve_observer(description):
 
 def build_run(description: run_desc) -> run:
 
+    normalize_bound_settings(description)
     validate_description(description)
 
     # Find selected attack
@@ -364,6 +366,22 @@ def validate_transformations(transformations):
             bits = parameters.get("bits", 8)
             if isinstance(bits, bool) or not isinstance(bits, int) or bits < 2:
                 raise ValueError("Signed symmetric quantization requires bits >= 2")
+        if name in {"lower_bound_threshold", "max_svd_reference_scale"}:
+            from transformations.reconstruction_bound import required_noise_l2
+            method = parameters.get("bound_method", "directional_residual_v1")
+            if method not in {"directional_residual_v1", "legacy_proof_v1"}:
+                raise ValueError(f"Unknown lower-bound method: {method}")
+            required_noise_l2(0., 1., 0., parameters.get("residual_l2", 0.),
+                              parameters.get("residual_fraction", .1))
+            if name == "max_svd_reference_scale":
+                from transformations.transformation_implimentations.threasholds.lower_bound_threashold import lower_bound_threshold
+                signature = inspect.signature(registry[name].func)
+                forwarded = {key: value for key, value in parameters.items()
+                             if key not in signature.parameters}
+                try:
+                    inspect.signature(lower_bound_threshold).bind_partial(**forwarded)
+                except TypeError as error:
+                    raise ValueError(f"Invalid reference bound parameters: {error}") from error
         arguments = dict(runtime)
         arguments.update(parameters)
         try:

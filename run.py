@@ -78,6 +78,7 @@ def execute_description(description, *, skip_existing=True, progress=None):
     transformation = transformation_context(
         model=model, batch=samples,
         target_mse=description.observer.evaluation_target_mse,
+        original_gradients=original,
     )
     metadata.update({
         "model_state_sha256": model_fingerprint(model),
@@ -99,6 +100,7 @@ def execute_description(description, *, skip_existing=True, progress=None):
         batch=samples, gradients=package,
         transformation_metrics=measure_transformation(original, package),
         experiment_metadata=metadata,
+        original_gradients=original,
     )
     progress["phase"] = "attack_setup_or_execution"
     return handle_run(executable, context)

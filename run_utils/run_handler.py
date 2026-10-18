@@ -121,6 +121,16 @@ def handle_run(
             **attack.parameters
         )
 
+        if active_observer is not None:
+            from run_utils.bound_evaluation import evaluate_reconstruction_bounds
+            bounds = evaluate_reconstruction_bounds(
+                context, {"practical": active_observer.best_image,
+                          "oracle": active_observer.oracle_best_image},
+                getattr(active_observer.config, "batch_matching", "assignment"),
+            )
+            if bounds:
+                context.experiment_metadata["reconstruction_bounds"] = bounds
+
         return result
 
     except Exception as error:

@@ -1,5 +1,6 @@
 
 import math
+import inspect
 
 import torch
 from transformations.ranking_implimentations.transform_utils import record_numerical_diagnostic
@@ -28,6 +29,9 @@ def max_svd_reference_scale(
     reference_iterations: int | None = None,
     reference_tolerance: float = 1e-4,
     reference_max_iterations: int | None = None,
+    bound_method: str = "directional_residual_v1",
+    residual_l2: float = 0.0,
+    residual_fraction: float = 0.1,
     **kwargs
 ) -> list[torch.Tensor]:
     if target_error is None:
@@ -37,6 +41,12 @@ def max_svd_reference_scale(
         raise ValueError("No reconstruction error target configured")
     if not math.isfinite(target_error) or target_error < 0:
         raise ValueError("target_error (MSE) must be finite and nonnegative")
+    if bound_method not in {"directional_residual_v1", "legacy_proof_v1"}:
+        raise ValueError(f"Unknown lower-bound method: {bound_method}")
+    from transformations.reconstruction_bound import required_noise_l2
+    required_noise_l2(0., 1., 0., residual_l2, residual_fraction)
+    # Reject unsupported forwarded settings before constructing a costly SVD.
+    inspect.signature(lower_bound_threshold).bind_partial(**kwargs)
     if (not package.grads or len(package.grads) != len(noise_tensors)
             or len(noise_tensors) != len(selection_masks)):
         raise ValueError("Gradient, noise, and mask lists must match and be nonempty")
@@ -83,6 +93,9 @@ def max_svd_reference_scale(
             context,
             target_error=target_error,
             mu_j=mu_j,
+            bound_method=bound_method,
+            residual_l2=residual_l2,
+            residual_fraction=residual_fraction,
             **kwargs
         )
     except Exception as error:
@@ -135,5 +148,7 @@ def max_svd_reference_scale(
         status="matched_reference_norm", reference_l2=float(reference_norm),
         applied_l2=float(applied_norm), test_multiplier=float(reference_norm / noise_norm),
         reference_bound_status=getattr(context, "numerical_diagnostics", {}).get("lower_bound", {}).get("status"),
+        reference_bound_method=bound_method, norm_matched_only=True,
+        test_direction_bound_transferred=False,
     )
     return scaled_noise
