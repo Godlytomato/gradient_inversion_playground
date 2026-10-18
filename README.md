@@ -114,6 +114,9 @@ See [pre-push validation](docs/PREPUSH_VALIDATION.md) for clean-install,
 real-CIFAR runner and results-viewer checks and their limits.
 See the [batch runner and lower-bound review](docs/RUNNER_READINESS.md) for the
 subsequent continuation fixes, numerical checks and remaining limits.
+The [proof and ResNet audit](docs/LOWER_BOUND_AUDIT.md) checks the supplied
+derivation and explains why its exact-gradient-match and smoothness assumptions
+are not established for the current noisy ReLU ResNet experiments.
 
 ## Numerical limits and reporting
 
