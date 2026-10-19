@@ -49,7 +49,7 @@ def max_svd_alignment(
     ]
 
     norm = torch.linalg.vector_norm(
-        direction
+        direction, dtype=torch.float64,
     )
 
     if norm != 0:

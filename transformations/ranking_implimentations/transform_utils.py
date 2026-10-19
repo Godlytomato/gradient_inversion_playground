@@ -644,9 +644,16 @@ def _exact_singular_triplet(context, matrix, which, rank_policy):
     return sigma, u, v
 
 
+def _singular_norm(vector):
+    # Gradient-space vectors can have millions of float32 coordinates. Their
+    # float32 norm reduction can lose more than the requested SVD tolerance,
+    # even when every JVP/VJP is accurate. Promote the reduction, not the model.
+    return torch.linalg.vector_norm(vector, dtype=torch.float64)
+
+
 def _random_unit(images):
     v = torch.randn(images.numel(), device=images.device, dtype=images.dtype)
-    norm = torch.linalg.vector_norm(v)
+    norm = _singular_norm(v)
     if not torch.isfinite(norm) or norm == 0:
         raise RuntimeError("Could not initialize singular direction")
     return v / norm
@@ -655,26 +662,28 @@ def _random_unit(images):
 def _power_direction(context, images, iterations, tolerance=None, check_after=1):
     v = _random_unit(images)
     for step in range(iterations):
-        candidate = jtj_vector_product(v, context)
-        norm = torch.linalg.vector_norm(candidate)
+        image = jacobian_vector_product(v, context)
+        sigma = _singular_norm(image)
+        if not torch.isfinite(sigma):
+            raise RuntimeError("Nonfinite singular power iteration")
+        if sigma == 0:
+            return sigma, image, v, step + 1
+        # Normalizing between the products is algebraically the same power
+        # direction as J.T(Jv), avoids squaring the scale, and lets early stop
+        # use exactly the singular residual checked on the returned triplet.
+        candidate = jacobian_transpose_vector_product(image / sigma, context)
+        norm = _singular_norm(candidate)
         if not torch.isfinite(norm):
             raise RuntimeError("Nonfinite singular power iteration")
+        if tolerance is not None and step + 1 >= check_after:
+            relative = _singular_norm(candidate - sigma * v) / sigma
+            if relative <= tolerance:
+                return sigma, image, v, step + 1
         if norm == 0:
             break
-        if tolerance is not None and step + 1 >= check_after:
-            eigenvalue = torch.dot(v, candidate)
-            if eigenvalue > 0:
-                relative = torch.linalg.vector_norm(candidate - eigenvalue * v) / eigenvalue
-                # J.T(Jv) and the final J.T(Jv / ||Jv||) are evaluated
-                # separately. Float32 rounding can put their residuals on
-                # opposite sides of the requested tolerance. Leave room for
-                # that difference before stopping early; the final singular
-                # residual remains authoritative, including at the hard cap.
-                if relative <= tolerance * 0.5:
-                    break
         v = candidate / norm
     image = jacobian_vector_product(v, context)
-    return torch.linalg.vector_norm(image), image, v, step + 1
+    return _singular_norm(image), image, v, step + 1
 
 
 def _checked_singular_triplet(context, sigma, image, v, scale, which, tolerance, diagnostic):
@@ -689,7 +698,7 @@ def _checked_singular_triplet(context, sigma, image, v, scale, which, tolerance,
             "problem or an explicit rank-aware solver."
         )
     u = image / sigma
-    residual = torch.linalg.vector_norm(jacobian_transpose_vector_product(u, context) - sigma * v)
+    residual = _singular_norm(jacobian_transpose_vector_product(u, context) - sigma * v)
     relative = float(residual / scale)
     diagnostic.update(sigma=float(sigma), relative_residual=relative)
     if not math.isfinite(relative) or relative > tolerance:
@@ -738,7 +747,8 @@ def max_singular_direction(
         "method": "matrix_free_power", "iterations": used_iterations,
         "initial_iterations": initial_iterations, "max_iterations": cap,
         "relative_tolerance": tolerance,
-        "power_proxy_tolerance": tolerance * 0.5,
+        "stopping_criterion": "relative_singular_residual",
+        "norm_accumulation_dtype": "float64",
         "spectral_norm_is_certified_upper_bound": False,
     }
     if float(sigma) == 0:
@@ -789,17 +799,18 @@ def min_singular_direction(
     for _ in range(iterations):
         z = conjugate_gradient(normalized_operator, v, iterations=solve_iterations,
                                tolerance=min(tolerance * .1, 1e-6))
-        norm = torch.linalg.vector_norm(z)
+        norm = _singular_norm(z)
         if not torch.isfinite(norm) or norm == 0:
             raise RuntimeError("Minimum-SVD inverse solve produced an invalid direction")
         v = z / norm
     image = jacobian_vector_product(v, context)
-    sigma = torch.linalg.vector_norm(image)
+    sigma = _singular_norm(image)
     diagnostic = {
         "method": "matrix_free_inverse", "iterations": iterations,
         "solve_iterations": solve_iterations, "relative_damping": damping,
         "relative_tolerance": tolerance, "rank_policy": rank_policy,
         "spectral_scale_estimate": float(scale),
+        "norm_accumulation_dtype": "float64",
         "spectral_norm_is_certified_upper_bound": False,
     }
     return _checked_singular_triplet(context, sigma, image, v, scale, "min", tolerance, diagnostic)
