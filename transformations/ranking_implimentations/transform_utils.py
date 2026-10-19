@@ -760,33 +760,80 @@ def max_singular_direction(
 
 def min_singular_direction(
     context: transformation_context,
-    iterations: int = 5,
-    solve_iterations: int = 8,
-    damping: float = 1e-4,
+    iterations: int | None = None,
+    solve_iterations: int | None = None,
+    damping: float | None = None,
     tolerance: float = 1e-4,
     exact_max_elements: int = 200000,
     exact_max_input_size: int = 64,
     rank_policy: str = "error",
+    solver_method: str = "inverse_v2",
+    krylov_max_iterations: int | None = None,
+    krylov_check_every: int | None = None,
+    krylov_max_elements: int | None = None,
+    solver_seed: int | None = None,
 ):
     """Return a checked minimum triplet, rejecting unresolved/null directions.
 
-    ``damping`` is relative to the estimated squared spectral norm, preserving
-    directions under scalar changes of the gradient map. Exact SVD is used only
-    within both resource caps. The default rejects input-null singular values;
-    ``smallest_nonzero`` explicitly chooses the least positive triplet when an
-    exact SVD identifies rank. Matrix-free output remains an estimate.
+    ``inverse_v2`` preserves explicit historical budgets (defaults 5/8) and
+    relative damping. ``lanczos_v1`` searches a fully reorthogonalized input
+    Krylov basis, with declared product/memory caps and an independent seed.
+    New presets select Lanczos; old descriptions retain their explicit method
+    until migrated. Both methods require the same final singular residual.
+    Exact SVD is used only within both caps. Unresolved/null modes are rejected;
+    matrix-free output does not certify global extremality or rank.
     """
-    _singular_settings(iterations, tolerance, exact_max_elements, exact_max_input_size)
-    if not math.isfinite(damping) or damping <= 0 or solve_iterations < 1:
-        raise ValueError("Damping and solve iterations must be positive")
+    from run_utils.svd_settings import min_svd_parameters
+    settings = min_svd_parameters(
+        iterations=iterations, solve_iterations=solve_iterations, damping=damping,
+        solver_method=solver_method, krylov_max_iterations=krylov_max_iterations,
+        krylov_check_every=krylov_check_every, krylov_max_elements=krylov_max_elements,
+        solver_seed=solver_seed,
+    )
+    _singular_settings(settings.get("iterations", 1), tolerance, exact_max_elements, exact_max_input_size)
     if rank_policy not in {"error", "smallest_nonzero"}:
         raise ValueError("rank_policy must be 'error' or 'smallest_nonzero'")
-    images, _ = batch_tensors(context)
+    images, labels = batch_tensors(context)
+    from transformations.svd_cache import lookup_singular_triplet, store_singular_triplet
+    cache_settings = {
+        **settings, "tolerance": tolerance, "exact_max_elements": exact_max_elements,
+        "exact_max_input_size": exact_max_input_size, "rank_policy": rank_policy,
+    }
+    cached = lookup_singular_triplet(context, "min", cache_settings, images, labels)
+    if cached is not None:
+        return cached
+
+    def verified(triplet):
+        store_singular_triplet(
+            context, "min", cache_settings, images, labels, triplet,
+            context.numerical_diagnostics["min_svd"],
+        )
+        return triplet
+
     matrix = _small_jacobian(context, images, exact_max_elements, exact_max_input_size)
     if matrix is not None:
-        return _exact_singular_triplet(context, matrix, "min", rank_policy)
+        return verified(_exact_singular_triplet(context, matrix, "min", rank_policy))
     if rank_policy != "error":
         raise RuntimeError("smallest_nonzero rank policy requires exact SVD within resource caps")
+    if settings["solver_method"] == "lanczos_v1":
+        from transformations.minimum_krylov import minimum_krylov
+        diagnostic = {
+            "method": "matrix_free_lanczos", "solver_method": "lanczos_v1",
+            "relative_tolerance": tolerance, "rank_policy": rank_policy,
+            "norm_accumulation_dtype": "float64",
+            "spectral_norm_is_certified_upper_bound": False,
+            "stopping_criterion": "relative_singular_residual",
+        }
+        sigma, image, v, scale = minimum_krylov(
+            context, images, labels, tolerance=tolerance,
+            max_iterations=settings["krylov_max_iterations"],
+            check_every=settings["krylov_check_every"],
+            max_elements=settings["krylov_max_elements"],
+            seed=settings["solver_seed"], diagnostic=diagnostic,
+        )
+        return verified(_checked_singular_triplet(context, sigma, image, v, scale, "min", tolerance, diagnostic))
+    iterations, solve_iterations, damping = (settings[name] for name in
+                                            ("iterations", "solve_iterations", "damping"))
     scale, _, _, _ = _power_direction(context, images, max(5, iterations))
     if not torch.isfinite(scale) or scale == 0:
         record_numerical_diagnostic(context, "min_svd", {"status": "zero_jacobian_observed", "method": "matrix_free_inverse"})
@@ -806,11 +853,11 @@ def min_singular_direction(
     image = jacobian_vector_product(v, context)
     sigma = _singular_norm(image)
     diagnostic = {
-        "method": "matrix_free_inverse", "iterations": iterations,
+        "method": "matrix_free_inverse", "solver_method": "inverse_v2", "iterations": iterations,
         "solve_iterations": solve_iterations, "relative_damping": damping,
         "relative_tolerance": tolerance, "rank_policy": rank_policy,
         "spectral_scale_estimate": float(scale),
         "norm_accumulation_dtype": "float64",
         "spectral_norm_is_certified_upper_bound": False,
     }
-    return _checked_singular_triplet(context, sigma, image, v, scale, "min", tolerance, diagnostic)
+    return verified(_checked_singular_triplet(context, sigma, image, v, scale, "min", tolerance, diagnostic))

@@ -3,6 +3,9 @@
 The minimum-SVD diagnosis below was reproduced against commit `2542703`.
 The subsequently supplied GradDefense-reference maximum-SVD failure was also
 reproduced exactly and its precision/stopping defect has now been repaired.
+The minimum solver has since been replaced in new presets by a bounded checked
+Krylov estimator; the [minimum-solver report](MINIMUM_SVD_SOLVER.md) documents its
+exact-case validation and explicit migration of old inverse-iteration schedules.
 The SVD-based comparisons are not yet validated for final extremal-direction
 claims on ResNet. Passing execution tests does not establish that those solves
 converge on the intended experimental cases.
@@ -33,6 +36,11 @@ are nevertheless plainly inadequate for these requested solves.
 
 This happens before the attack starts. `min_svd_noise` uses fixed noise scaling,
 not lower-bound calibration, so its failure cannot be caused by the lower bound.
+The new `lanczos_v1` method passes this exact case at step 400 with sigma
+0.03287184 and residual 0.0000882293, keeping tolerance 0.0001. The historical
+five/eight settings are retained only when explicitly selecting the old method;
+they are not silently reinterpreted. This repairs the demonstrated default
+underconvergence, without establishing a certified global minimum.
 
 ## Why one maximum solve affects several references
 
@@ -102,7 +110,7 @@ not a certificate of global extremality or an established spectral upper bound.
 
 ## Repeated solves and masking change the experiment
 
-Ranking and noise construction currently solve separately with successive
+Maximum-SVD ranking and noise construction still solve separately with successive
 random starting vectors. With clustered singular values, both can pass the
 residual check while returning different directions. A controlled diagonal map
 diag(1,0.99999,0.5) gave:
@@ -116,6 +124,12 @@ Thus selection can use one valid approximate mode while construction uses
 another. Clustered eigenspaces inherently have unstable individual bases;
 repeatability and subspace stability need explicit treatment. A small singular
 residual does not by itself prove global extremality or a unique direction.
+
+New minimum-SVD presets now use an independent solver stream and reuse one
+checked triplet for matching settings/operator within a cacheable evaluation
+context. That fixes ranking/construction drift on this minimum path. Shared
+controls across separate attack contexts and the maximum path still need the
+broader reuse policy below.
 
 Alignment functions also solve the full Jacobian, truncate its left singular
 vector to the selected coordinates and renormalize. This is a masked full-SVD
@@ -158,11 +172,12 @@ bound. Measured MSE and measured raw residual must be reported separately.
 ## Changes needed for reliable scientific comparisons
 
 1. **Finish validating the singular solver path.** The demonstrated maximum
-   precision/early-stop defect is repaired. For minimum-SVD, use a rank-aware
-   matrix-free Krylov/SVD implementation with bounded resources, checked inner
-   solves where applicable, and final triplet residuals. Test against explicit
-   small SVDs, clustered spectra, ill-conditioned maps and nullspaces. Validate
-   on the exact case above and independent cases. Increasing a cap is an
+   precision/early-stop defect is repaired, and the new bounded minimum Krylov
+   estimator passes the supplied case and checks final triplet residuals without
+   inner inverse solves. Rank-aware large-scale minimum-positive/null-space
+   certification remains a separate capability. Controlled regressions cover
+   small SVDs, clustered spectra, ill-conditioned maps and nullspaces. Extend
+   real-model validation beyond the supplied case with independent cases. Increasing a cap is an
    experiment, not a guarantee; loosening the accuracy check is not a repair.
 
 2. **Define which operator and direction the experiment means.** Either label
@@ -170,8 +185,10 @@ bound. Measured MSE and measured raw residual must be reported separately.
    to the selected observations. Report actual directional gain after masking.
    Minimum-positive and numerical-null experiments must remain distinct.
 
-3. **Reuse verified numerical controls.** Rank and construct from one checked
-   triplet. Give numerical solvers random streams independent of noise draws.
+3. **Reuse verified numerical controls.** The new minimum path already reuses
+   one checked triplet per matching evaluation context/settings and has an
+   independent solver stream. Extend that policy to maximum solves and shared
+   controls across attacks.
    Precompute one reference artifact per model state, private sample, operator/
    mask, settings and seed, and reuse it across attacks. If it fails, mark that
    shared reference case unavailable; never silently substitute another method.
@@ -206,5 +223,6 @@ Local reproduction:
 `user_min_results.json`. Maximum-case before/after evidence is in
 `reproduce_user_max.py`, `user_max_baseline.json` and `user_max_fixed.json` in the
 same local artifact directory. The compact precision and cap regressions are
-committed in `tests/test_svd_stopping.py`. The minimum solver replacement and
-comparison-protocol changes listed above remain outstanding.
+committed in `tests/test_svd_stopping.py`. Minimum-solver tests and migration are
+described in [MINIMUM_SVD_SOLVER.md](MINIMUM_SVD_SOLVER.md). The comparison-
+protocol changes listed above remain outstanding.

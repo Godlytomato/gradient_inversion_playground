@@ -3,6 +3,7 @@ import math
 
 from run_def import run_desc
 from run_utils.bound_settings import normalize_bound_settings
+from run_utils.svd_settings import normalize_min_svd_settings
 from reconstruction.attack_registry import attack_registry
 from reconstruction.attack_def import attack_def
 
@@ -211,6 +212,7 @@ def resolve_observer(description):
 def build_run(description: run_desc) -> run:
 
     normalize_bound_settings(description)
+    normalize_min_svd_settings(description)
     validate_description(description)
 
     # Find selected attack
