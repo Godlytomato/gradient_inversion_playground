@@ -22,6 +22,10 @@ def min_svd_lower_bound(
     krylov_check_every: int | None = None,
     krylov_max_elements: int | None = None,
     solver_seed: int | None = None,
+    rank_policy: str | None = None,
+    relative_rank_tolerance: float | None = None,
+    dense_max_elements: int | None = None,
+    dense_max_input_size: int | None = None,
 ) -> list[grad_transform]:
 
     if not 0.0 <= percent <= 1.0:
@@ -43,7 +47,9 @@ def min_svd_lower_bound(
         iterations=iterations, solve_iterations=solve_iterations, damping=damping,
         solver_method=solver_method, krylov_max_iterations=krylov_max_iterations,
         krylov_check_every=krylov_check_every, krylov_max_elements=krylov_max_elements,
-        solver_seed=solver_seed,
+        solver_seed=solver_seed, rank_policy=rank_policy,
+        relative_rank_tolerance=relative_rank_tolerance,
+        dense_max_elements=dense_max_elements, dense_max_input_size=dense_max_input_size,
     )
 
     return [

@@ -66,14 +66,16 @@ class NumericalTests(unittest.TestCase):
                 self.assertGreater(float(abs(u[1])), .999999)
                 self.assertLess(float((matrix.T @ u - sigma * v).norm() / scale), 1e-12)
 
-    def test_rank_deficiency_is_explicitly_rejected(self):
+    def test_strict_rank_policy_rejects_nullspace_and_positive_policy_selects_coupled_mode(self):
         context, _ = prescribed(torch.diag(torch.tensor([1., 0.])))
         with self.assertRaisesRegex(RuntimeError, "nullspace"):
-            min_singular_direction(context)
+            min_singular_direction(context, solver_method="inverse_v2", rank_policy="error")
         self.assertEqual(context.numerical_diagnostics["min_svd"]["status"], "numerical_nullspace")
         sigma, _, _ = min_singular_direction(context, rank_policy="smallest_nonzero")
         self.assertEqual(float(sigma), 1.)
-        self.assertEqual(context.numerical_diagnostics["min_svd"]["status"], "minimum_nonzero_by_explicit_policy")
+        self.assertEqual(context.numerical_diagnostics["min_svd"]["status"], "converged_minimum_positive_estimate")
+        self.assertEqual(context.numerical_diagnostics["min_svd"]["numerical_rank"], 1)
+        self.assertEqual(context.numerical_diagnostics["min_svd"]["input_nullity"], 1)
 
     def test_cross_entropy_input_nullspace_is_rejected(self):
         class Classifier(torch.nn.Module):
@@ -84,11 +86,11 @@ class NumericalTests(unittest.TestCase):
                 return self.fc(x.flatten(1)[:, :1])
         context = transformation_context(Classifier(), [(torch.tensor([.2, .4], dtype=torch.float64), 1)])
         with self.assertRaisesRegex(RuntimeError, "nullspace"):
-            min_singular_direction(context)
+            min_singular_direction(context, solver_method="inverse_v2", rank_policy="error")
 
     def test_zero_rank_has_no_nonzero_minimum(self):
         context, _ = prescribed(torch.zeros(2, 2))
-        with self.assertRaisesRegex(RuntimeError, "nullspace"):
+        with self.assertRaisesRegex(RuntimeError, "nullspace|positive"):
             min_singular_direction(context, rank_policy="smallest_nonzero")
         sigma, u, _ = max_singular_direction(context)
         self.assertEqual(float(sigma), 0.)
@@ -107,7 +109,8 @@ class NumericalTests(unittest.TestCase):
     def test_matrix_free_null_leakage_is_never_normalized(self):
         context, _ = prescribed(torch.diag(torch.tensor([1., 0.])))
         with self.assertRaisesRegex(RuntimeError, "null|converge"):
-            min_singular_direction(context, exact_max_elements=0)
+            min_singular_direction(context, exact_max_elements=0,
+                                   solver_method="inverse_v2", rank_policy="error")
 
     def test_unconverged_matrix_free_output_raises(self):
         context, _ = prescribed(torch.diag(torch.tensor([2., 1.])))

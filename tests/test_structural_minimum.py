@@ -36,7 +36,7 @@ class StructuralMinimumTests(unittest.TestCase):
     def test_explicit_minimum_positive_policy_keeps_its_separate_resource_checks(self):
         context = self.context()
         with self.assertRaisesRegex(RuntimeError, "smallest_nonzero rank policy requires exact SVD"):
-            min_singular_direction(context, rank_policy="smallest_nonzero")
+            min_singular_direction(context, rank_policy="smallest_nonzero", solver_method="inverse_v2")
         self.assertNotIn("min_svd", context.numerical_diagnostics)
 
 
