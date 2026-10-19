@@ -120,6 +120,9 @@ are not established for the current noisy ReLU ResNet experiments.
 The corrected [residual-aware bound](docs/RESIDUAL_BOUND.md) removes the exact-fit
 requirement and reports conditional results using each saved image's actual
 gradient residual. ReLU smoothness and supplied constants remain uncertified.
+The [SVD/reference scientific-readiness diagnosis](docs/SCIENTIFIC_READINESS.md)
+reproduces the reported ResNet failure and identifies remaining solver,
+direction-consistency, masking and noise-budget issues in those comparisons.
 
 ## Numerical limits and reporting
 
