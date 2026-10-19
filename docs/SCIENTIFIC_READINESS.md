@@ -1,6 +1,8 @@
 # SVD, reference and ResNet threshold diagnosis
 
-Reviewed against commit `2542703` and the reported E2EGI/min-SVD/ResNet18 failure.
+The minimum-SVD diagnosis below was reproduced against commit `2542703`.
+The subsequently supplied GradDefense-reference maximum-SVD failure was also
+reproduced exactly and its precision/stopping defect has now been repaired.
 The SVD-based comparisons are not yet validated for final extremal-direction
 claims on ResNet. Passing execution tests does not establish that those solves
 converge on the intended experimental cases.
@@ -46,10 +48,57 @@ formula is a=(epsilon_abs+kappa*r+mu_J*r^2/2)/(1-rho). A finite calibration can
 still be conditionally inapplicable to an attack or exceed a declared noise
 budget. Those statuses must remain distinct from an upstream singular solve.
 
-For maximum-SVD, power iteration can require many steps when leading singular
-values cluster. Earlier validation reproduced a 500-step failure that needed
-704 steps under a larger explicit cap. This does not identify the exact cause
-of an unprovided current maximum error; its diagnostics must be inspected.
+## Maximum-SVD precision defect: reproduced and repaired
+
+The supplied GradDefense-reference failure used the same model fingerprint,
+image and experiment seed as above. Its maximum solver stopped at iteration
+29 of the 500-step budget, with sigma 2.9320445 and singular residual 0.00079207
+against tolerance 0.0001. This was not an exhausted iteration budget.
+
+The JVP has 11,173,962 gradient coordinates. Accumulating its norm in float32
+underestimated it: the accurate norm of the same float32 vector is 2.9332040.
+Using that norm reduces the same iterate's singular residual to 0.000039807.
+The old normal-equations stopping proxy was 0.000039821. It passed while the
+biased normalization made final validation fail. A fixed safety margin on the
+proxy cannot repair that precision loss.
+
+The corrected solver accumulates norms in float64 while retaining the model and
+derivative products in their original dtype. It normalizes between JVP/VJP
+products and stops on the actual singular residual used by final validation.
+If that residual fails, refinement continues from the current iterate within
+the declared cap. The tolerance remains 0.0001. Minimum-SVD norms, masked
+alignment normalization and reported perturbation norms use accurate
+accumulation too.
+
+On the exact supplied maximum case, the corrected default solver converges at
+iteration 27 with sigma 2.9332039 and residual 0.000082112. A compact regression
+with 65,536 gradient coordinates reproduces the old false failure: its old
+proxy is zero but biased normalization yields residual 0.000422. Accurate
+normalization gives 0.000000223. At an explicitly stricter tolerance 0.00000001,
+the solver correctly rejects after consuming the full test cap, rather than
+stopping early on the zero proxy. Tests also check minimum-SVD normalization,
+masked max/min directions and reported perturbation norms.
+
+The complete default GradDefense-reference transformation was then run on the
+same actual CIFAR-10/ResNet18 case, including all 16 sensitivity probes per layer,
+slice selection, Gaussian construction, the maximum solve, conditional
+calibration and final noise application. It completed in 82.4 seconds on one CPU
+thread. The masked reference gain was 2.15458; reference L2 was 22.1782165868 and
+actual applied L2 was 22.1782165862. Calibration recorded MSE 0.01999999987 under
+its supplied assumptions and `matched_reference_norm` for the test direction.
+This validates construction/calibration, not an actual attack outcome or a
+guaranteed MSE for the Gaussian direction. All 126 unit/regression tests passed;
+the experiment database checksum remained unchanged. Full-case artifacts are
+`verify_user_reference.py` and `user_reference_fixed.json` in the local artifact
+directory identified below. CUDA execution was not tested.
+
+This is an implementation precision defect upstream of the bound. It does not
+invalidate the conditional scalar formula. The earlier minimum-SVD failure is
+different: its residual near 0.0616 and unconverged inner solves are not repaired
+by accurate normalization alone. Power iteration can also genuinely need more
+than 500 steps when leading singular values cluster; earlier validation needed
+704 steps in a separate case. A small triplet residual remains an estimate,
+not a certificate of global extremality or an established spectral upper bound.
 
 ## Repeated solves and masking change the experiment
 
@@ -108,7 +157,8 @@ bound. Measured MSE and measured raw residual must be reported separately.
 
 ## Changes needed for reliable scientific comparisons
 
-1. **Repair and validate the singular solver path.** Use a rank-aware
+1. **Finish validating the singular solver path.** The demonstrated maximum
+   precision/early-stop defect is repaired. For minimum-SVD, use a rank-aware
    matrix-free Krylov/SVD implementation with bounded resources, checked inner
    solves where applicable, and final triplet residuals. Test against explicit
    small SVDs, clustered spectra, ill-conditioned maps and nullspaces. Validate
@@ -153,5 +203,8 @@ minimum/maximum comparisons.
 
 Local reproduction:
 `/workspace/prepush-tests/scientific-readiness/reproduce_user_min.py` and
-`user_min_results.json`. This review does not claim that the remaining numerical
-solver changes have already been implemented or validated.
+`user_min_results.json`. Maximum-case before/after evidence is in
+`reproduce_user_max.py`, `user_max_baseline.json` and `user_max_fixed.json` in the
+same local artifact directory. The compact precision and cap regressions are
+committed in `tests/test_svd_stopping.py`. The minimum solver replacement and
+comparison-protocol changes listed above remain outstanding.

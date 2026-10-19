@@ -8,8 +8,8 @@ def measure_transformation(original, transformed):
     ])
     original_flat = torch.cat([g.detach().reshape(-1) for g in original])
 
-    delta_norm = torch.linalg.vector_norm(delta).item()
-    original_norm = torch.linalg.vector_norm(original_flat).item()
+    delta_norm = torch.linalg.vector_norm(delta, dtype=torch.float64).item()
+    original_norm = torch.linalg.vector_norm(original_flat, dtype=torch.float64).item()
     total = delta.numel()
 
     missing = (
