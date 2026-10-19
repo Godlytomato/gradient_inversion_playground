@@ -126,6 +126,10 @@ direction-consistency, masking and noise-budget issues in those comparisons.
 The [minimum-SVD solver repair](docs/MINIMUM_SVD_SOLVER.md) explains the checked
 Krylov method and how to migrate existing YAML with
 `python scripts/set_min_svd_solver.py schedual` without resetting the database.
+CIFAR LeNet has a proven input nullspace, so its current full-minimum coupled
+noise direction is undefined. These cases are recorded with
+`structural_input_nullspace` and the schedule continues; larger budgets cannot
+remove that architectural obstruction.
 
 ## Numerical limits and reporting
 

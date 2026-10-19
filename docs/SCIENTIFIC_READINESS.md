@@ -6,6 +6,11 @@ reproduced exactly and its precision/stopping defect has now been repaired.
 The minimum solver has since been replaced in new presets by a bounded checked
 Krylov estimator; the [minimum-solver report](MINIMUM_SVD_SOLVER.md) documents its
 exact-case validation and explicit migration of old inverse-iteration schedules.
+The later CIFAR LeNet report exposed a structural distinction: this architecture
+has rank(D_x g) <=1992 for 3072 input coordinates, so its full minimum is exactly
+zero. The current coupled-left construction is unavailable there; a structural
+check now records that reason before solving. This is a mathematical obstruction
+separate from the resolved ResNet underconvergence.
 The SVD-based comparisons are not yet validated for final extremal-direction
 claims on ResNet. Passing execution tests does not establish that those solves
 converge on the intended experimental cases.

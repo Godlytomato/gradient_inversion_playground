@@ -59,6 +59,57 @@ solve and different directions from successive random starts. The cache does
 not change which coordinates are selected: construction still masks the full
 left direction, as discussed in the [scientific review](SCIENTIFIC_READINESS.md).
 
+## CIFAR LeNet has an exact input nullspace
+
+The subsequently reported LeNet case has model hash
+`38df24d9424830dd70b9403ba4a7145ccf9403211bfa9e6e47cec6e43635bf5e`
+and the same seed/image. Its old `inverse_v2` solver also fails to converge.
+However, this architecture has a separate mathematical obstruction to the
+current full-minimum construction, independent of the iteration budget.
+
+For an RGB 32x32 image the input dimension is 3072. After the first convolution,
+tanh and average pool, the feature dimension is 6x16x16=1536. All downstream
+parameter gradients are functions only of those features, with the parameters
+and labels fixed. Their input-Jacobian rank is therefore at most 1536. The first
+convolution has 6x3x5x5+6=456 parameter-gradient coordinates, which can add at most
+456 independent rows. Stacking the blocks gives
+
+```text
+rank(D_x g) <= 1536 + 456 = 1992 < 3072
+input nullity >= 1080
+```
+
+Thus the full input minimum singular value is zero for every set of weights.
+A corresponding right-null vector gives Jv=0; the current construction
+u=Jv/sigma divides by zero and cannot identify a unique coupled left direction.
+More iterations cannot make this full minimum into a nonzero coupled mode.
+The dimension argument was independently checked with double-precision autograd:
+the downstream gradient/JVP exactly matched their factorization through the
+first pooled features.
+
+The default error policy now detects this structural obstruction before any
+exact or iterative singular solve. Diagnostics report
+`method: structural_rank_bound`, `status: structural_input_nullspace`, and the
+proven rank/nullity bounds. The certificate concerns the architecture's rank;
+it is not a privacy certificate. Unsupported custom architectures/losses/hooks
+are not assumed to satisfy the certificate. Single-channel MNIST LeNet is not
+rejected by this dimension bound because its dimensions differ.
+
+On the exact supplied LeNet case the early check takes about 0.0005 seconds.
+Before adding this check, Lanczos approached a weak/null direction (sigma
+0.00001120 after 512 steps), but could not validate a nonzero coupled triplet.
+That observation alone did not prove exact rank deficiency; the structural
+argument does. The minimum-positive coupled singular mode and a left-null noise
+direction are alternative experimental definitions. Neither is substituted
+silently. The existing explicit `smallest_nonzero` policy still requires exact
+SVD within its declared resource caps.
+
+These LeNet cases should be reported as unavailable for the current full-minimum
+protocol, not as failed attacks or evidence of privacy. The runner records the
+reason and continues with other scheduled cases. Historical completed results
+using this full-minimum interpretation require review; changing source code
+does not retroactively correct their scientific interpretation.
+
 ## Existing schedules
 
 Old YAML with explicit five/eight inverse budgets keeps `inverse_v2`; reading it
@@ -92,9 +143,9 @@ historical random start passed at step 336 with sigma 0.03287186 and residual
 value. Regression cases compare against small dense SVDs, including rotated,
 clustered, rank-deficient and rescaled maps; enforce work/memory caps; explore
 an initially missed minimum; and verify backend fallback and triplet reuse.
-All 155 unit/regression tests passed, including configuration migration,
-historical-result preservation and cache invalidation for changing model/loss
-state. Tests use synthetic data and temporary databases.
+All 166 unit/regression tests passed, including configuration migration,
+historical-result preservation, structural-rank guards and cache invalidation
+for changing model/loss state. Tests use synthetic data and temporary databases.
 
 The full Beyond Gradients/min-SVD-noise/ResNet18 pipeline also completed on the
 same actual CIFAR case, using one restart and one attack iteration in an isolated
@@ -129,3 +180,4 @@ Local exact-case artifacts are under `/workspace/prepush-tests/min-solver/`:
 `production_case.py`, `production_case.json`, prototype logs/states, and
 `beyond-gradients/results.json`. The three-control check is preserved in
 `min_controls.py` and `min_controls.json`. CUDA execution was not tested.
+The LeNet structural rejection is recorded in `production_lenet_structural.log`.

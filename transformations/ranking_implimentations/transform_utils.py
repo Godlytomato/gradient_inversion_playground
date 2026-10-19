@@ -794,6 +794,25 @@ def min_singular_direction(
     if rank_policy not in {"error", "smallest_nonzero"}:
         raise ValueError("rank_policy must be 'error' or 'smallest_nonzero'")
     images, labels = batch_tensors(context)
+    if rank_policy == "error":
+        from transformations.structural_rank import gradient_jacobian_rank_bound
+        rank_bound = gradient_jacobian_rank_bound(context, images)
+        if rank_bound is not None:
+            record_numerical_diagnostic(context, "min_svd", {
+                **settings, "method": "structural_rank_bound",
+                "status": "structural_input_nullspace", "rank_policy": rank_policy,
+                "rank_deficiency_proven": True, "structural_rank": rank_bound,
+                "relative_tolerance": tolerance,
+            })
+            raise RuntimeError(
+                "Minimum input singular value is zero for this LeNet: gradient "
+                f"Jacobian rank <= {rank_bound['rank_upper_bound']} < "
+                f"{rank_bound['input_dimension']} (input nullity >= "
+                f"{rank_bound['nullity_lower_bound']}). The coupled gradient-space "
+                "direction u=Jv/sigma is undefined at sigma=0. More iterations "
+                "cannot fix this definition; minimum-positive and left-null "
+                "directions are different experimental protocols."
+            )
     from transformations.svd_cache import lookup_singular_triplet, store_singular_triplet
     cache_settings = {
         **settings, "tolerance": tolerance, "exact_max_elements": exact_max_elements,
