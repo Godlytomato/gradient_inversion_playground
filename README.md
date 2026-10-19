@@ -123,9 +123,16 @@ gradient residual. ReLU smoothness and supplied constants remain uncertified.
 The [SVD/reference scientific-readiness diagnosis](docs/SCIENTIFIC_READINESS.md)
 reproduces the reported ResNet failure and identifies remaining solver,
 direction-consistency, masking and noise-budget issues in those comparisons.
-The [minimum-SVD solver repair](docs/MINIMUM_SVD_SOLVER.md) explains the checked
-Krylov method and how to migrate existing YAML with
-`python scripts/set_min_svd_solver.py schedual` without resetting the database.
+Minimum-SVD presets now use the [minimum numerically nonnull protocol](docs/MINIMUM_POSITIVE_SVD.md)
+with `solver_method: positive_svd_v1`, `rank_policy: smallest_nonzero`, and a
+relative rank cutoff of `1e-5`. This handles CIFAR LeNet's proven input nullspace
+by selecting its smallest resolved positive mode. Bounded dense QR/SVD covers
+the supplied LeNet case; larger models retain checked iterative estimates and
+explicit numerical limits. Unconfigured schedules adopt this policy before
+hashing; historical results remain separate. To update the YAMLs themselves,
+run `python scripts/set_min_svd_solver.py schedual` after stopping the runner.
+No database reset is needed. The earlier [minimum-SVD solver review](docs/MINIMUM_SVD_SOLVER.md)
+records the original full-minimum diagnosis and convergence repair.
 
 ## Numerical limits and reporting
 
@@ -149,22 +156,24 @@ continues after an error.
 Keyboard interrupts still stop the batch. Database initialization errors stop
 before the batch starts.
 
-Singular directions carry convergence/rank diagnostics. Small problems use a
-bounded exact SVD; larger ones use checked matrix-free estimates. Maximum-SVD
+Singular directions carry convergence/rank diagnostics. Minimum-positive cases
+within declared dense caps use CPU QR/SVD; larger cases use checked matrix-free
+estimates. Maximum-SVD
 has bounded adaptive defaults; explicit iteration caps are honored. Minimum-SVD
 can reject numerical nullspaces or unconverged solves. Larger budgets may help,
 but the implementation will not replace an unresolved minimum direction with
 normalized maximum-direction leakage. Do not count a rejected experiment as a
 successful defense.
 
-Old YAML files keep their explicit solver limits. For a reference-scaling run,
+Maximum-SVD YAML files keep their explicit solver limits. For a reference-scaling run,
 `transform.parameters.scaling.parameters.reference_max_iterations` increases the
 reference-direction cap. `svd_max_iterations` increases the spectral-norm cap
 only for `legacy_proof_v1`; the corrected calibration needs no maximum SVD.
 Maximum-SVD ranking and construction use their own
-`max_iterations` parameters. New minimum-SVD presets use `lanczos_v1` with
-`krylov_max_iterations`; migrate old schedules using the script linked above.
-Raising a cap keeps the residual tolerance unchanged
+`max_iterations` parameters. New minimum-SVD presets use `positive_svd_v1`,
+with dense resource limits and `krylov_max_iterations` for larger cases.
+Unconfigured minimum schedules upgrade before hashing; the script linked above
+also rewrites their YAMLs. Raising a cap keeps the residual tolerance unchanged
 and still permits a checked numerical error if the solve does not converge.
 
 Lower-bound calibration uses `directional_residual_v1` and explicitly covers

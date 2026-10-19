@@ -1,5 +1,12 @@
 # Minimum-SVD convergence repair
 
+The current default is the [minimum numerically nonnull protocol](MINIMUM_POSITIVE_SVD.md):
+`positive_svd_v1`, `rank_policy: smallest_nonzero`, and relative rank cutoff
+`1e-5` across all four minimum presets. Existing schedules without an explicit
+rank policy adopt it before hashing. The historical full-minimum diagnosis and
+checked Krylov repair below remain useful context; their old default and
+exact-only positive policy are superseded by that explicit common convention.
+
 The reported ResNet error concerns numerical accuracy of a singular triplet,
 not MSE success, a reconstruction threshold, or lower-bound feasibility. Writing
 J for the gradient-map Jacobian, the solver must find vectors satisfying
@@ -25,7 +32,8 @@ the resulting triplet instead of relying on those inaccurate inverse updates.
 
 ## New checked method
 
-New minimum-SVD presets select `solver_method: lanczos_v1`. The solver searches
+The earlier convergence repair introduced `solver_method: lanczos_v1`, which
+remains available for explicitly strict full-minimum experiments. The solver searches
 an input-space Krylov basis for the lowest Rayleigh--Ritz mode of normalized
 J.T*J. It retains all searched basis vectors and products within its declared
 caps, with two-pass float64 reorthogonalization and projected eigendecomposition.
@@ -59,12 +67,67 @@ solve and different directions from successive random starts. The cache does
 not change which coordinates are selected: construction still masks the full
 left direction, as discussed in the [scientific review](SCIENTIFIC_READINESS.md).
 
+## CIFAR LeNet has an exact input nullspace
+
+The subsequently reported LeNet case has model hash
+`38df24d9424830dd70b9403ba4a7145ccf9403211bfa9e6e47cec6e43635bf5e`
+and the same seed/image. Its old `inverse_v2` solver also fails to converge.
+However, this architecture has a separate mathematical obstruction to the
+current full-minimum construction, independent of the iteration budget.
+
+For an RGB 32x32 image the input dimension is 3072. After the first convolution,
+tanh and average pool, the feature dimension is 6x16x16=1536. All downstream
+parameter gradients are functions only of those features, with the parameters
+and labels fixed. Their input-Jacobian rank is therefore at most 1536. The first
+convolution has 6x3x5x5+6=456 parameter-gradient coordinates, which can add at most
+456 independent rows. Stacking the blocks gives
+
+```text
+rank(D_x g) <= 1536 + 456 = 1992 < 3072
+input nullity >= 1080
+```
+
+Thus the full input minimum singular value is zero for every set of weights.
+A corresponding right-null vector gives Jv=0; the current construction
+u=Jv/sigma divides by zero and cannot identify a unique coupled left direction.
+More iterations cannot make this full minimum into a nonzero coupled mode.
+The dimension argument was independently checked with double-precision autograd:
+the downstream gradient/JVP exactly matched their factorization through the
+first pooled features.
+
+An explicitly strict `rank_policy: error` still detects this structural
+obstruction before any exact or iterative singular solve. Diagnostics report
+`method: structural_rank_bound`, `status: structural_input_nullspace`, and the
+proven rank/nullity bounds. The certificate concerns the architecture's rank;
+it is not a privacy certificate. Unsupported custom architectures/losses/hooks
+are not assumed to satisfy the certificate. Single-channel MNIST LeNet is not
+rejected by this dimension bound because its dimensions differ.
+
+On the exact supplied LeNet case the early check takes about 0.0005 seconds.
+Before adding this check, Lanczos approached a weak/null direction (sigma
+0.00001120 after 512 steps), but could not validate a nonzero coupled triplet.
+That observation alone did not prove exact rank deficiency; the structural
+argument does. The minimum-positive coupled singular mode and a left-null noise
+direction are alternative experimental definitions. The user has now selected
+the minimum numerically nonnull convention for all models. The new bounded dense
+route resolves the supplied LeNet case at numerical rank 1992 and selects sigma
+0.000003090901344, with checked relative residual 0.000000029308. It does not
+turn the full minimum into a positive value.
+
+These LeNet cases remain unavailable under an explicitly strict full-minimum
+protocol; that condition is not a failed attack or evidence of privacy. The runner records the
+reason and continues with other scheduled cases. Historical completed results
+using this full-minimum interpretation require review; changing source code
+does not retroactively correct their scientific interpretation.
+
 ## Existing schedules
 
-Old YAML with explicit five/eight inverse budgets keeps `inverse_v2`; reading it
-does not silently grant a larger budget or switch algorithms. New Python
-presets choose Lanczos unless the caller explicitly supplies legacy inverse
-settings. To update existing schedules, stop the runner and execute:
+The current requested policy upgrades minimum-SVD YAML without an explicit rank
+policy to `positive_svd_v1` before validation and hashing, replacing obsolete
+inverse budgets. This includes older entries naming an inverse or Lanczos
+method. Source YAML remains unchanged. Explicit strict historical policies can
+still be reproduced with an older method. To migrate every minimum-SVD entry,
+including explicit strict policies, stop the runner and execute:
 
 ```bash
 python scripts/set_min_svd_solver.py schedual --dry-run
@@ -74,10 +137,10 @@ python -m run
 
 The migration validates the whole directory before writing, preserves initial
 backups as `*.before-min-svd-solver.bak`, and is idempotent. It replaces inverse
-solver parameters on min-SVD ranking/construction with matching Lanczos settings.
-Selection masks, noise scaling, attacks and observer settings remain unchanged.
-Custom tolerances and exact-SVD caps are retained. CLI options expose the Krylov
-work/memory/check limits and solver seed. The algorithm and effective settings
+solver parameters on min-SVD ranking/construction with matching positive-protocol
+settings. Selection masks, noise scaling, attacks and observer settings remain
+unchanged. Custom residual tolerances and exact-SVD caps are retained. CLI options
+expose rank cutoff, dense limits, Krylov work/memory/check limits and solver seed. The algorithm and effective settings
 are serialized and normalized before configuration hashing; new-method runs
 therefore have a distinct scientific identity. Historical database rows are
 preserved, including their errors. No database reset is necessary.
@@ -92,9 +155,9 @@ historical random start passed at step 336 with sigma 0.03287186 and residual
 value. Regression cases compare against small dense SVDs, including rotated,
 clustered, rank-deficient and rescaled maps; enforce work/memory caps; explore
 an initially missed minimum; and verify backend fallback and triplet reuse.
-All 155 unit/regression tests passed, including configuration migration,
-historical-result preservation and cache invalidation for changing model/loss
-state. Tests use synthetic data and temporary databases.
+All 166 unit/regression tests passed, including configuration migration,
+historical-result preservation, structural-rank guards and cache invalidation
+for changing model/loss state. Tests use synthetic data and temporary databases.
 
 The full Beyond Gradients/min-SVD-noise/ResNet18 pipeline also completed on the
 same actual CIFAR case, using one restart and one attack iteration in an isolated
@@ -118,9 +181,11 @@ not a guaranteed MSE for the applied direction or verified smoothness constants.
 
 A converged residual supports an estimated singular mode. It does not certify
 the global smallest value or a unique basis in a clustered eigenspace. Very weak
-or null modes may remain unresolved in the model's precision; the minimum-
-positive rank policy still requires an exact SVD within its caps. Larger cases
-can require a different declared budget or a separate rank-aware method.
+or null modes may remain unresolved in the model's precision. The new positive
+protocol uses bounded dense QR/SVD where possible and does not skip an unresolved
+matrix-free null mode to accept an interior value. Larger cases can still require
+a different declared budget, precision, or rank-aware method. See the
+[current protocol](MINIMUM_POSITIVE_SVD.md) for cutoff and resource semantics.
 ReLU smoothness, supplied mu_J values, attack residual assumptions, masking and
 matched-noise-budget concerns remain separate from numerical convergence. This
 repair does not turn conditional ResNet calibration into a certified bound.
@@ -129,3 +194,4 @@ Local exact-case artifacts are under `/workspace/prepush-tests/min-solver/`:
 `production_case.py`, `production_case.json`, prototype logs/states, and
 `beyond-gradients/results.json`. The three-control check is preserved in
 `min_controls.py` and `min_controls.json`. CUDA execution was not tested.
+The LeNet structural rejection is recorded in `production_lenet_structural.log`.

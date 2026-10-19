@@ -599,11 +599,12 @@ def _small_jacobian(context, images, exact_max_elements, exact_max_input_size):
     return matrix
 
 
-def _exact_singular_triplet(context, matrix, which, rank_policy):
+def _exact_singular_triplet(context, matrix, which, rank_policy, relative_rank_tolerance=None):
     # Float64 SVD avoids losing small singular values solely to the decomposition.
     # Rank tolerance still reflects the precision of the computed Jacobian.
     left, values, right_h = torch.linalg.svd(matrix.to(torch.float64), full_matrices=False)
-    relative_rank_tolerance = max(matrix.shape) * torch.finfo(matrix.dtype).eps
+    if relative_rank_tolerance is None:
+        relative_rank_tolerance = max(matrix.shape) * torch.finfo(matrix.dtype).eps
     cutoff = float(values[0]) * relative_rank_tolerance
     rank = int((values > cutoff).sum())
     diagnostic = {
@@ -764,36 +765,66 @@ def min_singular_direction(
     solve_iterations: int | None = None,
     damping: float | None = None,
     tolerance: float = 1e-4,
-    exact_max_elements: int = 200000,
-    exact_max_input_size: int = 64,
-    rank_policy: str = "error",
-    solver_method: str = "inverse_v2",
+    exact_max_elements: int | None = None,
+    exact_max_input_size: int | None = None,
+    rank_policy: str | None = None,
+    solver_method: str | None = None,
     krylov_max_iterations: int | None = None,
     krylov_check_every: int | None = None,
     krylov_max_elements: int | None = None,
     solver_seed: int | None = None,
+    relative_rank_tolerance: float | None = None,
+    dense_max_elements: int | None = None,
+    dense_max_input_size: int | None = None,
 ):
-    """Return a checked minimum triplet, rejecting unresolved/null directions.
+    """Return a checked minimum-positive triplet under the declared rank cutoff.
 
     ``inverse_v2`` preserves explicit historical budgets (defaults 5/8) and
     relative damping. ``lanczos_v1`` searches a fully reorthogonalized input
     Krylov basis, with declared product/memory caps and an independent seed.
-    New presets select Lanczos; old descriptions retain their explicit method
-    until migrated. Both methods require the same final singular residual.
-    Exact SVD is used only within both caps. Unresolved/null modes are rejected;
-    matrix-free output does not certify global extremality or rank.
+    The default positive_svd_v1 uses bounded dense QR/SVD or a checked matrix-free
+    search. Explicit historical methods retain their own rank policy/budgets.
+    A numerical cutoff defines positive modes; matrix-free output remains an
+    estimate. Explicit legacy exact caps also limit the new dense backend.
     """
     from run_utils.svd_settings import min_svd_parameters
     settings = min_svd_parameters(
         iterations=iterations, solve_iterations=solve_iterations, damping=damping,
         solver_method=solver_method, krylov_max_iterations=krylov_max_iterations,
         krylov_check_every=krylov_check_every, krylov_max_elements=krylov_max_elements,
-        solver_seed=solver_seed,
+        solver_seed=solver_seed, rank_policy=rank_policy,
+        relative_rank_tolerance=relative_rank_tolerance,
+        dense_max_elements=dense_max_elements, dense_max_input_size=dense_max_input_size,
     )
-    _singular_settings(settings.get("iterations", 1), tolerance, exact_max_elements, exact_max_input_size)
-    if rank_policy not in {"error", "smallest_nonzero"}:
-        raise ValueError("rank_policy must be 'error' or 'smallest_nonzero'")
+    legacy_elements = 200000 if exact_max_elements is None else exact_max_elements
+    legacy_input_size = 64 if exact_max_input_size is None else exact_max_input_size
+    _singular_settings(settings.get("iterations", 1), tolerance, legacy_elements, legacy_input_size)
+    rank_policy = settings["rank_policy"]
+    if settings["solver_method"] == "positive_svd_v1":
+        if exact_max_elements is not None:
+            settings["dense_max_elements"] = min(settings["dense_max_elements"], exact_max_elements)
+        if exact_max_input_size is not None:
+            settings["dense_max_input_size"] = min(settings["dense_max_input_size"], exact_max_input_size)
     images, labels = batch_tensors(context)
+    if rank_policy == "error":
+        from transformations.structural_rank import gradient_jacobian_rank_bound
+        rank_bound = gradient_jacobian_rank_bound(context, images)
+        if rank_bound is not None:
+            record_numerical_diagnostic(context, "min_svd", {
+                **settings, "method": "structural_rank_bound",
+                "status": "structural_input_nullspace", "rank_policy": rank_policy,
+                "rank_deficiency_proven": True, "structural_rank": rank_bound,
+                "relative_tolerance": tolerance,
+            })
+            raise RuntimeError(
+                "Minimum input singular value is zero for this LeNet: gradient "
+                f"Jacobian rank <= {rank_bound['rank_upper_bound']} < "
+                f"{rank_bound['input_dimension']} (input nullity >= "
+                f"{rank_bound['nullity_lower_bound']}). The coupled gradient-space "
+                "direction u=Jv/sigma is undefined at sigma=0. More iterations "
+                "cannot fix this definition; minimum-positive and left-null "
+                "directions are different experimental protocols."
+            )
     from transformations.svd_cache import lookup_singular_triplet, store_singular_triplet
     cache_settings = {
         **settings, "tolerance": tolerance, "exact_max_elements": exact_max_elements,
@@ -810,9 +841,14 @@ def min_singular_direction(
         )
         return triplet
 
-    matrix = _small_jacobian(context, images, exact_max_elements, exact_max_input_size)
+    if settings["solver_method"] == "positive_svd_v1":
+        from transformations.positive_svd import positive_singular_direction
+        return verified(positive_singular_direction(context, images, labels, settings, tolerance))
+    matrix = _small_jacobian(context, images, legacy_elements, legacy_input_size)
     if matrix is not None:
-        return verified(_exact_singular_triplet(context, matrix, "min", rank_policy))
+        return verified(_exact_singular_triplet(
+            context, matrix, "min", rank_policy, settings.get("relative_rank_tolerance"),
+        ))
     if rank_policy != "error":
         raise RuntimeError("smallest_nonzero rank policy requires exact SVD within resource caps")
     if settings["solver_method"] == "lanczos_v1":

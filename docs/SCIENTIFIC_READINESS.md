@@ -1,14 +1,27 @@
 # SVD, reference and ResNet threshold diagnosis
 
+> Current minimum-SVD policy: the user has selected the smallest numerically
+> nonnull mode across all models. The [minimum-positive protocol](MINIMUM_POSITIVE_SVD.md)
+> implements `positive_svd_v1`, `rank_policy: smallest_nonzero`, and rank cutoff
+> `1e-5`. Bounded dense QR/SVD resolves the supplied rank-deficient LeNet case.
+> Historical failures and mathematical distinctions below are retained; the
+> earlier strict full-minimum default is superseded. Larger iterative estimates
+> still lack global-minimum certification.
+
 The minimum-SVD diagnosis below was reproduced against commit `2542703`.
 The subsequently supplied GradDefense-reference maximum-SVD failure was also
 reproduced exactly and its precision/stopping defect has now been repaired.
-The minimum solver has since been replaced in new presets by a bounded checked
-Krylov estimator; the [minimum-solver report](MINIMUM_SVD_SOLVER.md) documents its
-exact-case validation and explicit migration of old inverse-iteration schedules.
-The SVD-based comparisons are not yet validated for final extremal-direction
-claims on ResNet. Passing execution tests does not establish that those solves
-converge on the intended experimental cases.
+The minimum solver was first replaced by a bounded checked Krylov estimator;
+the [minimum-solver report](MINIMUM_SVD_SOLVER.md) documents that repair. The later
+CIFAR LeNet report exposed a structural distinction: this architecture has
+rank(D_x g) <=1992 for 3072 input coordinates, so its full minimum is exactly
+zero. The requested common minimum-positive convention now selects its smallest
+numerically nonnull coupled mode using bounded dense QR/SVD. An explicitly
+strict full-minimum policy still records the architectural nullspace before
+solving. This distinction is separate from ResNet numerical underconvergence.
+The supplied LeNet and ResNet cases pass their singular residual checks. These
+case checks do not establish global extremality of iterative estimates or
+convergence across other model states and samples.
 
 ## The user's exact failure is reproducible
 
@@ -36,11 +49,14 @@ are nevertheless plainly inadequate for these requested solves.
 
 This happens before the attack starts. `min_svd_noise` uses fixed noise scaling,
 not lower-bound calibration, so its failure cannot be caused by the lower bound.
-The new `lanczos_v1` method passes this exact case at step 400 with sigma
-0.03287184 and residual 0.0000882293, keeping tolerance 0.0001. The historical
-five/eight settings are retained only when explicitly selecting the old method;
-they are not silently reinterpreted. This repairs the demonstrated default
-underconvergence, without establishing a certified global minimum.
+The checked `lanczos_v1` method passed this exact case at step 400 with sigma
+0.03287184 and residual 0.0000882293, keeping tolerance 0.0001. The current
+`positive_svd_v1` protocol also passes at step 400 with sigma 0.03287183895675
+and residual 0.0000881678598. It records incomplete rank information and no
+certified global minimum. Unconfigured schedules now adopt that positive policy
+before hashing; explicitly strict older methods remain available for historical
+reproduction. This repairs the demonstrated default underconvergence without
+turning an iterative estimate into a global certificate.
 
 ## Why one maximum solve affects several references
 
@@ -172,10 +188,13 @@ bound. Measured MSE and measured raw residual must be reported separately.
 ## Changes needed for reliable scientific comparisons
 
 1. **Finish validating the singular solver path.** The demonstrated maximum
-   precision/early-stop defect is repaired, and the new bounded minimum Krylov
-   estimator passes the supplied case and checks final triplet residuals without
-   inner inverse solves. Rank-aware large-scale minimum-positive/null-space
-   certification remains a separate capability. Controlled regressions cover
+   precision/early-stop defect is repaired. The checked minimum Krylov estimator
+   passes the supplied ResNet case without inner inverse solves. The requested
+   minimum-positive protocol now also resolves the supplied LeNet case by bounded
+   dense QR/SVD: rank 1992 of 3072, sigma 0.000003090901344, relative residual
+   0.000000029308 at rank cutoff `1e-5`. Large-scale global minimum-positive/rank
+   certification remains a separate capability; unresolved null modes are not
+   skipped to accept an interior mode. Controlled regressions cover
    small SVDs, clustered spectra, ill-conditioned maps and nullspaces. Extend
    real-model validation beyond the supplied case with independent cases. Increasing a cap is an
    experiment, not a guarantee; loosening the accuracy check is not a repair.

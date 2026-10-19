@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Explicitly migrate generated minimum-SVD run YAMLs to checked Lanczos solves."""
+"""Migrate minimum-SVD YAMLs to the declared minimum-nonnull protocol."""
 import argparse
 import copy
 from pathlib import Path
@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from run_utils.svd_settings import (  # noqa: E402
     DEFAULT_KRYLOV_CHECK_EVERY, DEFAULT_KRYLOV_MAX_ELEMENTS,
     DEFAULT_KRYLOV_MAX_ITERATIONS, DEFAULT_MIN_SVD_METHOD,
+    DEFAULT_MIN_SVD_RANK_POLICY, DEFAULT_RELATIVE_RANK_TOLERANCE,
+    DEFAULT_DENSE_MAX_ELEMENTS, DEFAULT_DENSE_MAX_INPUT_SIZE,
     LEGACY_BUDGET_NAMES, min_svd_parameters,
 )
 
@@ -19,8 +21,11 @@ from run_utils.svd_settings import (  # noqa: E402
 def configure_run(raw, *, krylov_max_iterations=DEFAULT_KRYLOV_MAX_ITERATIONS,
                   krylov_check_every=DEFAULT_KRYLOV_CHECK_EVERY,
                   krylov_max_elements=DEFAULT_KRYLOV_MAX_ELEMENTS,
-                  solver_seed=0):
-    """Change only minimum-SVD solver settings in a copied run mapping."""
+                  solver_seed=0,
+                  relative_rank_tolerance=DEFAULT_RELATIVE_RANK_TOLERANCE,
+                  dense_max_elements=DEFAULT_DENSE_MAX_ELEMENTS,
+                  dense_max_input_size=DEFAULT_DENSE_MAX_INPUT_SIZE):
+    """Set one minimum-positive protocol on ranking and construction packages."""
     if not isinstance(raw, dict):
         raise ValueError("Expected a run mapping")
     solver = min_svd_parameters(
@@ -28,6 +33,9 @@ def configure_run(raw, *, krylov_max_iterations=DEFAULT_KRYLOV_MAX_ITERATIONS,
         krylov_max_iterations=krylov_max_iterations,
         krylov_check_every=krylov_check_every,
         krylov_max_elements=krylov_max_elements, solver_seed=solver_seed,
+        rank_policy=DEFAULT_MIN_SVD_RANK_POLICY,
+        relative_rank_tolerance=relative_rank_tolerance,
+        dense_max_elements=dense_max_elements, dense_max_input_size=dense_max_input_size,
     )
     updated = copy.deepcopy(raw)
     transformations = updated.get("gradient_transformations", [])
@@ -67,6 +75,10 @@ def main(argv=None):
     parser.add_argument("--krylov-check-every", type=int, default=DEFAULT_KRYLOV_CHECK_EVERY)
     parser.add_argument("--krylov-max-elements", type=int, default=DEFAULT_KRYLOV_MAX_ELEMENTS)
     parser.add_argument("--solver-seed", type=int, default=0)
+    parser.add_argument("--relative-rank-tolerance", type=float,
+                        default=DEFAULT_RELATIVE_RANK_TOLERANCE)
+    parser.add_argument("--dense-max-elements", type=int, default=DEFAULT_DENSE_MAX_ELEMENTS)
+    parser.add_argument("--dense-max-input-size", type=int, default=DEFAULT_DENSE_MAX_INPUT_SIZE)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)
     if not args.schedule.is_dir():
@@ -90,6 +102,9 @@ def main(argv=None):
                 krylov_check_every=args.krylov_check_every,
                 krylov_max_elements=args.krylov_max_elements,
                 solver_seed=args.solver_seed,
+                relative_rank_tolerance=args.relative_rank_tolerance,
+                dense_max_elements=args.dense_max_elements,
+                dense_max_input_size=args.dense_max_input_size,
             )
             build_run(from_dict(data_class=run_desc, data=copy.deepcopy(updated)))
         except Exception as error:
@@ -108,7 +123,9 @@ def main(argv=None):
             temporary.replace(path)
         print(f"{'Would update' if args.dry_run else 'Updated'}: {path}")
     print(f"{len(changes)} changed, {len(paths) - len(changes)} already configured or unaffected.")
-    print("Minimum-SVD solver: lanczos_v1; existing attack, mask, noise, and observer settings retained.")
+    print(f"Minimum-SVD protocol: {DEFAULT_MIN_SVD_METHOD}, rank_policy=smallest_nonzero, "
+          f"relative_rank_tolerance={args.relative_rank_tolerance:g}; "
+          "existing attack, mask, noise, and observer settings retained.")
 
 
 if __name__ == "__main__":
