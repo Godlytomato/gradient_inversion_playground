@@ -19,13 +19,18 @@ def min_svd_alignment(
     package: grad_package,
     selection_masks: list[torch.Tensor],
     context: transformation_context,
-    iterations: int = 5,
-    solve_iterations: int = 8,
-    damping: float = 1e-4,
+    iterations: int | None = None,
+    solve_iterations: int | None = None,
+    damping: float | None = None,
     tolerance: float = 1e-4,
     exact_max_elements: int = 200000,
     exact_max_input_size: int = 64,
     rank_policy: str = "error",
+    solver_method: str = "inverse_v2",
+    krylov_max_iterations: int | None = None,
+    krylov_check_every: int | None = None,
+    krylov_max_elements: int | None = None,
+    solver_seed: int | None = None,
 ) -> list[torch.Tensor]:
 
     indices = selected_indices(
@@ -44,6 +49,9 @@ def min_svd_alignment(
         context, iterations=iterations, solve_iterations=solve_iterations,
         damping=damping, tolerance=tolerance, exact_max_elements=exact_max_elements,
         exact_max_input_size=exact_max_input_size, rank_policy=rank_policy,
+        solver_method=solver_method, krylov_max_iterations=krylov_max_iterations,
+        krylov_check_every=krylov_check_every, krylov_max_elements=krylov_max_elements,
+        solver_seed=solver_seed,
     )
 
     direction = u[

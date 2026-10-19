@@ -1,5 +1,6 @@
 
 from run_def import grad_transform, function_package
+from run_utils.svd_settings import min_svd_parameters
 from run_utils.bound_settings import DEFAULT_BOUND_METHOD, bound_parameters
 
 from validation.implementations.defenses.defense_def import (
@@ -11,12 +12,17 @@ def min_svd_noise_reference(
     target_error: float = 0.02,
     mu_j: float = 0.1,
     percent: float = 0.1,
-    iterations: int = 5,
-    solve_iterations: int = 8,
-    damping: float = 1e-4,
+    iterations: int | None = None,
+    solve_iterations: int | None = None,
+    damping: float | None = None,
     bound_method: str = DEFAULT_BOUND_METHOD,
     residual_l2: float = 0.0,
     residual_fraction: float = 0.1,
+    solver_method: str | None = None,
+    krylov_max_iterations: int | None = None,
+    krylov_check_every: int | None = None,
+    krylov_max_elements: int | None = None,
+    solver_seed: int | None = None,
 ) -> list[grad_transform]:
 
     if not 0.0 < percent <= 1.0:
@@ -34,15 +40,12 @@ def min_svd_noise_reference(
         residual_l2=residual_l2, residual_fraction=residual_fraction,
     )
 
-    if iterations <= 0 or solve_iterations <= 0:
-        raise ValueError(
-            "Iterations must be positive"
-        )
-
-    if damping <= 0:
-        raise ValueError(
-            "Damping must be positive"
-        )
+    solver_parameters = min_svd_parameters(
+        iterations=iterations, solve_iterations=solve_iterations, damping=damping,
+        solver_method=solver_method, krylov_max_iterations=krylov_max_iterations,
+        krylov_check_every=krylov_check_every, krylov_max_elements=krylov_max_elements,
+        solver_seed=solver_seed,
+    )
 
     return [
         grad_transform(
@@ -50,11 +53,7 @@ def min_svd_noise_reference(
 
             ranking_policy=function_package(
                 name="min_svd",
-                parameters={
-                    "iterations": iterations,
-                    "solve_iterations": solve_iterations,
-                    "damping": damping,
-                },
+                parameters=solver_parameters.copy(),
             ),
 
             draft_policy=function_package(
@@ -69,11 +68,7 @@ def min_svd_noise_reference(
                 parameters={
                     "construction": {
                         "name": "min_svd_alignment",
-                        "parameters": {
-                            "iterations": iterations,
-                            "solve_iterations": solve_iterations,
-                            "damping": damping,
-                        },
+                        "parameters": solver_parameters.copy(),
                     },
                     "scaling": {
                         "name": "max_svd_reference_scale",

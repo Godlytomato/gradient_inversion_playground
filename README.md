@@ -123,6 +123,9 @@ gradient residual. ReLU smoothness and supplied constants remain uncertified.
 The [SVD/reference scientific-readiness diagnosis](docs/SCIENTIFIC_READINESS.md)
 reproduces the reported ResNet failure and identifies remaining solver,
 direction-consistency, masking and noise-budget issues in those comparisons.
+The [minimum-SVD solver repair](docs/MINIMUM_SVD_SOLVER.md) explains the checked
+Krylov method and how to migrate existing YAML with
+`python scripts/set_min_svd_solver.py schedual` without resetting the database.
 
 ## Numerical limits and reporting
 
@@ -158,8 +161,10 @@ Old YAML files keep their explicit solver limits. For a reference-scaling run,
 `transform.parameters.scaling.parameters.reference_max_iterations` increases the
 reference-direction cap. `svd_max_iterations` increases the spectral-norm cap
 only for `legacy_proof_v1`; the corrected calibration needs no maximum SVD.
-Ranking and construction use their own
-`max_iterations` parameters. Raising a cap keeps the residual tolerance unchanged
+Maximum-SVD ranking and construction use their own
+`max_iterations` parameters. New minimum-SVD presets use `lanczos_v1` with
+`krylov_max_iterations`; migrate old schedules using the script linked above.
+Raising a cap keeps the residual tolerance unchanged
 and still permits a checked numerical error if the solve does not converge.
 
 Lower-bound calibration uses `directional_residual_v1` and explicitly covers
@@ -174,8 +179,9 @@ and attack failure do **not** prove a guaranteed privacy bound. An `INFEASIBLE`
 warning means the requested target cannot be established under those constants
 and perturbation budget. The attack continues with a bounded best-effort
 perturbation, recorded as `infeasible_best_effort`; this does not certify MSE 0.02.
-Minimum-direction convergence on full CIFAR-shaped models, full attack-success sweeps, GPU execution,
-training utility and external paper replication remain separate validation work.
+The reported ResNet/CIFAR minimum-direction case now converges. Broader case
+replicates, full attack-success sweeps, GPU execution, training utility and
+external paper replication remain separate validation work.
 
 The heatmap aggregates completed attempts within comparable model/data/evaluation
 strata and separates attack budgets. Review sample counts and error/incomplete
