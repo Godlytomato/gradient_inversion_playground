@@ -1,0 +1,104 @@
+name: beyond_gradients__graddefense_reference__resnet18__cifar10
+model: resnet18
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: graddefense_reference
+  ranking_policy:
+    name: graddefense_sensitivity
+    parameters:
+      method: frobenius_rademacher
+      samples: 16
+      seed: 0
+  draft_policy:
+    name: sensitivity_slices
+    parameters:
+      slices_num: 10
+      perturb_slices_num: 2
+      seed: 0
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: gaussian
+        parameters: {}
+      scaling:
+        name: max_svd_reference_scale
+        parameters:
+          target_error: 0.02
+          mu_j_method: manual
+          mu_j_debug: false
+          mu_j: 0.1
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: known
+  restarts: 3
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  loss: cosine
+  missingness_policy: visible_nonzero
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers:
+  - name: auxiliary_prior
+    parameters:
+      weight: 1.0e-06
+  - name: tv
+    parameters:
+      weight: 1.0e-07
+  post_update_mods:
+  - name: clamp
+    parameters:
+      minimum: 0.0
+      maximum: 1.0
+  pre_update_mods: []
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: beyond_gradients
+defense_name: graddefense_reference
+observer:
+  success_policies: []
+  fail_policies:
+  - name: max_iterations
+    parameters:
+      limit: 2000
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: attack_loss
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+experiment_seed: 0
+protocol_version: 2

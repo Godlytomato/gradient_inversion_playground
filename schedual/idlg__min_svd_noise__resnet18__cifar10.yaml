@@ -1,0 +1,101 @@
+name: idlg__min_svd_noise__resnet18__cifar10
+model: resnet18
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: min_svd_noise
+  ranking_policy:
+    name: min_svd
+    parameters:
+      iterations: 5
+      solve_iterations: 8
+      damping: 0.0001
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 0.1
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: min_svd_alignment
+        parameters:
+          iterations: 5
+          solve_iterations: 8
+          damping: 0.0001
+      scaling:
+        name: preset
+        parameters:
+          scale: 0.01
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: idlg
+  restarts: 1
+  optimizer_description:
+    name: lbfgs
+    parameters:
+      lr: 1.0
+      max_iter: 20
+  loss: l2
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers: []
+  post_update_mods: []
+  pre_update_mods: []
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: idlg
+defense_name: min_svd_noise
+observer:
+  success_policies:
+  - name: target_mse
+    parameters:
+      threshold: 0.02
+  fail_policies:
+  - name: no_improvement
+    parameters:
+      metric: mse
+      patience: 200
+      minimum_change: 0.0001
+  - name: max_iterations
+    parameters:
+      limit: 300
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: mse
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+experiment_seed: 0
+protocol_version: 2

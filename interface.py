@@ -151,6 +151,92 @@ def parse_logs(logs):
     return pd.DataFrame(rows)
 
 
+def extract_defense_config(raw):
+    """Flatten searchable defense metadata without changing the database."""
+    description = parse_json_dict(raw)
+    result = []
+    for item in description.get("gradient_transformations", []) or []:
+        if not isinstance(item, dict):
+            continue
+        ranking = item.get("ranking_policy") or {}
+        draft = item.get("draft_policy") or {}
+        transform = item.get("transform") or {}
+        params = transform.get("parameters") or {} if isinstance(transform, dict) else {}
+        construction = params.get("construction") or {}
+        scaling = params.get("scaling") or {}
+        result.append({
+            "preset": str(description.get("defense_name") or ""),
+            "transformation": str(item.get("name") or ""),
+            "ranking": str(ranking.get("name") or "") if isinstance(ranking, dict) else str(ranking),
+            "draft": str(draft.get("name") or "") if isinstance(draft, dict) else str(draft),
+            "transform": str(transform.get("name") or "") if isinstance(transform, dict) else str(transform),
+            "construction": str(construction.get("name") or "") if isinstance(construction, dict) else "",
+            "scaling": str(scaling.get("name") or "") if isinstance(scaling, dict) else "",
+            "parameters": {
+                "ranking": ranking.get("parameters", {}) if isinstance(ranking, dict) else {},
+                "draft": draft.get("parameters", {}) if isinstance(draft, dict) else {},
+                "transform": params,
+                "construction": construction.get("parameters", {}) if isinstance(construction, dict) else {},
+                "scaling": scaling.get("parameters", {}) if isinstance(scaling, dict) else {},
+            },
+        })
+    return result
+
+
+def flatten_parameter_paths(value, prefix=""):
+    if isinstance(value, dict):
+        for key, child in value.items():
+            path = f"{prefix}.{key}" if prefix else str(key)
+            yield from flatten_parameter_paths(child, path)
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            yield from flatten_parameter_paths(child, f"{prefix}[{index}]")
+    else:
+        yield prefix, value
+
+
+def matches_parameter(transform, key, text):
+    values = list(flatten_parameter_paths(transform["parameters"]))
+    return any(
+        (not key or key.casefold() in path.casefold())
+        and (not text or text.casefold() in str(value).casefold())
+        for path, value in values
+    )
+
+
+def transformation_matches(transform, choices, keyword, parameter_key, parameter_value):
+    for field, selected in choices.items():
+        if selected and transform[field] not in selected:
+            return False
+    if keyword:
+        searchable = " ".join(str(transform[field]) for field in (
+            "preset", "transformation", "ranking", "draft", "transform", "construction", "scaling"
+        ))
+        if keyword.casefold() not in searchable.casefold():
+            return False
+    if parameter_key or parameter_value:
+        if not matches_parameter(transform, parameter_key, parameter_value):
+            return False
+    return True
+
+
+def defense_matches(run, choices, keyword, parameter_key, parameter_value):
+    transforms = run["defense_config"]
+    # A family search can also match a preset name even if the nested config is absent.
+    if not transforms:
+        return not any(choices.values()) and not (parameter_key or parameter_value) and (
+            not keyword or keyword.casefold() in str(run["defense"]).casefold()
+        )
+    return any(
+        transformation_matches(t, choices, keyword, parameter_key, parameter_value)
+        for t in transforms
+    )
+
+
+def all_config_values(runs, field):
+    return sorted({t[field] for transforms in runs["defense_config"] for t in transforms if t[field]})
+
+
 def available_values(dataframe, column):
     return sorted(dataframe[column].dropna().astype(str).unique().tolist())
 
@@ -174,6 +260,7 @@ if runs.empty:
 
 runs["attack"] = runs.apply(lambda r: display_name(r["attack_name"], r["attack_hash"]), axis=1)
 runs["defense"] = runs.apply(lambda r: display_name(r["defense_name"], r["defense_hash"]), axis=1)
+runs["defense_config"] = runs["raw_description"].apply(extract_defense_config)
 runs["label"] = runs.apply(lambda r: f"{r['id']} | {r['name']} | {r['attack']} | {r['defense']}", axis=1)
 labels = dict(zip(runs["id"].astype(int), runs["label"]))
 
@@ -189,6 +276,37 @@ filters = {
 if filters["batch_size"]:
     filters["batch_size"] = [int(value) for value in filters["batch_size"]]
 filtered_runs = filter_runs(runs, filters)
+
+st.sidebar.divider()
+st.sidebar.subheader("Defense internals")
+st.sidebar.caption("Combine filters within the same transformation. Leave fields blank for all values.")
+family_query = st.sidebar.text_input(
+    "Defense family / name contains", placeholder="max_svd", key="defense_family_query"
+).strip()
+internal_choices = {
+    field: st.sidebar.multiselect(title, all_config_values(runs, field), key=f"defense_{field}")
+    for field, title in [
+        ("ranking", "Ranking policy"),
+        ("draft", "Draft policy"),
+        ("transform", "Transform type"),
+        ("construction", "Noise construction"),
+        ("scaling", "Noise scaling / threshold"),
+    ]
+}
+with st.sidebar.expander("Parameter search"):
+    st.caption("Search nested configuration parameters (e.g. scaling.target_error or scaling.mu_j).")
+    parameter_key = st.text_input("Parameter path contains", placeholder="scaling.target_error").strip()
+    parameter_value = st.text_input("Parameter value contains", placeholder="0.02").strip()
+
+if family_query or any(internal_choices.values()) or parameter_key or parameter_value:
+    mask = filtered_runs.apply(
+        lambda run: defense_matches(run, internal_choices, family_query, parameter_key, parameter_value),
+        axis=1,
+    )
+    filtered_runs = filtered_runs.loc[mask]
+
+st.sidebar.caption(f"{len(filtered_runs)} / {len(runs)} runs match")
+
 
 run_tab, compare_tab, components_tab, logs_tab, images_tab = st.tabs(
     ["Runs", "Compare Runs", "Components", "Logs", "Images"]
@@ -308,7 +426,8 @@ with compare_tab:
 
 with components_tab:
     st.subheader("All Components")
-    components = load_components()
+    only_matching_components = st.checkbox("Only components from matching runs", value=True)
+    components = load_components(filtered_runs["id"].astype(int).tolist()) if only_matching_components else load_components()
     categories = st.multiselect("Component categories", available_values(components, "category"))
     if categories:
         components = components[components["category"].isin(categories)]
@@ -316,11 +435,13 @@ with components_tab:
 
 with logs_tab:
     st.subheader("All Logs")
-    st.dataframe(load_logs(), use_container_width=True, hide_index=True)
+    only_matching_logs = st.checkbox("Only logs from matching runs", value=True)
+    st.dataframe(load_logs(filtered_runs["id"].astype(int).tolist() if only_matching_logs else None), use_container_width=True, hide_index=True)
 
 with images_tab:
     st.subheader("Stored Images")
-    image_rows = load_image_rows()
+    only_matching_images = st.checkbox("Only images from matching runs", value=True)
+    image_rows = load_image_rows(filtered_runs["id"].astype(int).tolist() if only_matching_images else None)
     st.dataframe(image_rows, use_container_width=True, hide_index=True)
     if not image_rows.empty:
         image_id = st.selectbox("View images for run", sorted(image_rows["run_id"].unique().astype(int).tolist()))

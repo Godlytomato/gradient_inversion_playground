@@ -1,0 +1,105 @@
+name: gradinversion__uniform_noise__resnet18__cifar10
+model: resnet18
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: uniform_noise
+  ranking_policy:
+    name: in_place
+    parameters: {}
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 1.0
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: uniform
+        parameters: {}
+      scaling:
+        name: relative_gradient_scale
+        parameters:
+          relative_scale: 0.01
+          mode: global
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: known
+  restarts: 3
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  loss: l2
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers:
+  - name: bn_stats
+    parameters:
+      weight: 1.0e-06
+  - name: tv
+    parameters:
+      weight: 1.0e-07
+  post_update_mods:
+  - name: clamp
+    parameters:
+      minimum: 0.0
+      maximum: 1.0
+  pre_update_mods: []
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: gradinversion
+defense_name: uniform_noise
+observer:
+  success_policies:
+  - name: target_mse
+    parameters:
+      threshold: 0.02
+  fail_policies:
+  - name: no_improvement
+    parameters:
+      metric: mse
+      patience: 200
+      minimum_change: 0.0001
+  - name: max_iterations
+    parameters:
+      limit: 300
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: mse
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+experiment_seed: 0
+protocol_version: 2

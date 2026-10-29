@@ -1,0 +1,100 @@
+name: geiping__max_svd_lower_bound__lenet5__cifar10
+model: lenet5
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: max_svd_lower_bound
+  ranking_policy:
+    name: max_svd
+    parameters:
+      iterations: null
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 0.1
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: max_svd_alignment
+        parameters:
+          iterations: null
+      scaling:
+        name: lower_bound_threshold
+        parameters:
+          target_error: 0.02
+          mu_j_method: manual
+          mu_j_debug: false
+          mu_j: 0.1
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: known
+  restarts: 8
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  loss: cosine
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers:
+  - name: tv
+    parameters:
+      weight: 1.0e-07
+  post_update_mods:
+  - name: clamp
+    parameters:
+      minimum: 0.0
+      maximum: 1.0
+  pre_update_mods:
+  - name: sign
+    parameters: {}
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: geiping
+defense_name: max_svd_lower_bound
+observer:
+  success_policies: []
+  fail_policies:
+  - name: max_iterations
+    parameters:
+      limit: 4800
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: attack_loss
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+experiment_seed: 0
+protocol_version: 2

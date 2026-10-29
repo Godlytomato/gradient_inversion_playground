@@ -1,0 +1,111 @@
+name: hf_gradinv__min_svd_lower_bound__resnet18__cifar10
+model: resnet18
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: min_svd_lower_bound
+  ranking_policy:
+    name: min_svd
+    parameters:
+      iterations: 5
+      solve_iterations: 8
+      damping: 0.0001
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 0.1
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: min_svd_alignment
+        parameters:
+          iterations: 5
+          solve_iterations: 8
+          damping: 0.0001
+      scaling:
+        name: lower_bound_threshold
+        parameters:
+          target_error: 0.02
+          mu_j_method: manual
+          mu_j_debug: false
+          mu_j: 0.1
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy:
+    name: hf_gradinv
+    parameters:
+      population_size: 200
+      iterations: 100000
+      feature_count: 20
+  restarts: 3
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  loss: cosine
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers:
+  - name: bn_stats
+    parameters:
+      weight: 1.0e-06
+  - name: auxiliary_prior
+    parameters:
+      weight: 1.0e-06
+  - name: tv
+    parameters:
+      weight: 1.0e-07
+  post_update_mods:
+  - name: clamp
+    parameters: {}
+  pre_update_mods: []
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: hf_gradinv
+defense_name: min_svd_lower_bound
+observer:
+  success_policies: []
+  fail_policies:
+  - name: max_iterations
+    parameters:
+      limit: 2000
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: attack_loss
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+experiment_seed: 0
+protocol_version: 2

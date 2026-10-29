@@ -30,3 +30,13 @@ checkpoint/
 .env
 .env.*
 .DS_Store
+.target_change_backup/
+defense_backups/
+log.txt
+target_changes.diff
+.vscode/
+checkpoint/
+*.db
+results/
+temp_logs/
+temp_images/

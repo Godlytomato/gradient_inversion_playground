@@ -1,0 +1,98 @@
+name: fedleak__laplace_noise__resnet18__cifar10
+model: resnet18
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: laplace_noise
+  ranking_policy:
+    name: in_place
+    parameters: {}
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 1.0
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: laplace
+        parameters: {}
+      scaling:
+        name: relative_gradient_scale
+        parameters:
+          relative_scale: 0.01
+          mode: global
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: known
+  restarts: 3
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  loss:
+    name: partial_gradient_matching
+    parameters:
+      percent: 0.1
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers: []
+  post_update_mods:
+  - name: clamp
+    parameters:
+      minimum: 0.0
+      maximum: 1.0
+  pre_update_mods:
+  - name: fedleak_gradient_regularization
+    parameters:
+      perturbation_size: 0.01
+      blend: 0.5
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: fedleak
+defense_name: laplace_noise
+observer:
+  success_policies: []
+  fail_policies:
+  - name: max_iterations
+    parameters:
+      limit: 1000
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: attack_loss
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+experiment_seed: 0
+protocol_version: 2
