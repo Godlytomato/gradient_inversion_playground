@@ -21,6 +21,14 @@ need CIFAR-10, GPUs, credentials, or access to an experiment database. The CPU
 requirements file is specific to this workflow; CUDA installations require a
 matching PyTorch/torchvision distribution and have not been validated here.
 
+## Sparse gradient disguise experiment
+
+For the separate three-server, single-image experiment, see
+[the experiment guide](experiments/coalition_disguise/README.md) and
+[the baseline failure review](experiments/coalition_disguise/REVIEW.md).
+It uses explicit trained weights, preserves saved shares, and gates subset
+attacks on paired original-gradient/full-share reconstruction controls.
+
 ## Experiments
 
 Run commands from the checkout. Dataset loading is lazy: configuration generation
