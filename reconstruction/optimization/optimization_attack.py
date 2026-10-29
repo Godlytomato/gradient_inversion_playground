@@ -8,6 +8,7 @@ from reconstruction.optimization.losses.implementations.gradient_matching_utils 
 from reconstruction.optimization.labels.label_policy_def import validate_label_state
 from reconstruction.optimization.optimization_context import optimization_context
 from reconstruction.optimization.optimization_state import optimization_state
+from reconstruction.optimization.initialization.initialization_def import parameterized_image
 
 
 def requires_closure(optimizer):
@@ -51,13 +52,27 @@ def run_attempt(information, components, observer, restart, effort=None):
     scheduler_def = components.get("scheduler")
 
     initial_reconstruction = call_component(initialization, information)
+    parameterized = isinstance(initial_reconstruction, parameterized_image)
+    if parameterized:
+        if pre_update_mods or post_update_mods:
+            raise ValueError("Parameterized images cannot use pixel gradient/update mods")
+        variable = initial_reconstruction.variable
+        decode = initial_reconstruction.decode
+        initial_reconstruction = decode(variable)
+    else:
+        decode = lambda value: value
     if not isinstance(initial_reconstruction, torch.Tensor):
         raise TypeError("Initialization must return a torch.Tensor")
     if initial_reconstruction.ndim < 2 or initial_reconstruction.shape[0] != batch_size:
         raise ValueError("Initialization must return a reconstruction with the requested batch size")
     if not initial_reconstruction.is_floating_point() or not torch.isfinite(initial_reconstruction).all():
         raise ValueError("Initial reconstruction must contain finite floating-point values")
-    reconstruction = initial_reconstruction.detach().requires_grad_(True)
+    if not parameterized:
+        variable = initial_reconstruction.detach().requires_grad_(True)
+    elif (not isinstance(variable, torch.Tensor) or not variable.is_floating_point()
+          or not variable.is_leaf or not variable.requires_grad or not torch.isfinite(variable).all()):
+        raise ValueError("Parameterized image variable must be a finite floating leaf requiring gradients")
+    reconstruction = initial_reconstruction
     label_state = validate_label_state(
         call_component(label_policy, information),
         batch_size=batch_size,
@@ -65,7 +80,7 @@ def run_attempt(information, components, observer, restart, effort=None):
         device=reconstruction.device,
     )
 
-    trainable = [reconstruction]
+    trainable = [variable]
     if label_state.trainable:
         trainable.append(label_state.labels)
 
@@ -163,12 +178,12 @@ def run_attempt(information, components, observer, restart, effort=None):
     while True:
         def closure():
             optimizer.zero_grad()
-            attack_loss = objective(reconstruction)
+            attack_loss = objective(decode(variable))
             attack_loss.backward()
             for mod in pre_update_mods:
                 call_component(
                     mod, information,
-                    reconstruction=reconstruction, state=state, context=context,
+                    reconstruction=variable, state=state, context=context,
                 )
             for parameter in trainable:
                 if parameter.grad is not None and not torch.isfinite(parameter.grad).all():
@@ -186,14 +201,21 @@ def run_attempt(information, components, observer, restart, effort=None):
         state.learning_rate = optimizer.param_groups[0]["lr"]
 
         for mod in post_update_mods:
-            call_component(mod, information, reconstruction=reconstruction, state=state)
+            call_component(mod, information, reconstruction=variable, state=state)
+        reconstruction = decode(variable)
         if not torch.isfinite(reconstruction).all():
             raise FloatingPointError("Attack update produced a nonfinite reconstruction")
 
         state.iteration += 1
         effort["outer_iterations"] += 1
         with torch.enable_grad():
-            current_loss = objective(reconstruction).detach().item()
+            current_objective = objective(reconstruction)
+            current_loss = current_objective.detach().item()
+            diagnostics = {}
+            if hasattr(observer, "inspect_step"):
+                diagnostics = observer.inspect_step(
+                    reconstruction, variable, label_state, current_objective, state,
+                )
 
         measurements = {
             name: value for name, value in effort.items() if not name.startswith("_")
@@ -202,7 +224,7 @@ def run_attempt(information, components, observer, restart, effort=None):
         measurements["restart_index"] = restart
         if hasattr(observer, "set_run_metrics"):
             observer.set_run_metrics(measurements)
-        observer.update(reconstruction, metrics={"attack_loss": current_loss, **measurements})
+        observer.update(reconstruction, metrics={"attack_loss": current_loss, **measurements, **diagnostics})
         if observer.should_stop():
             break
 

@@ -1,5 +1,6 @@
 """Sparse cancelling repair; proper coalitions always observe raw sums."""
 import itertools
+import math
 import torch
 
 
@@ -49,6 +50,7 @@ def audit(shares, g, d, epsilon, exact_shares=None):
                   norm_amplification=float(shares.double().norm(dim=1).max() / g.double().norm().clamp_min(1e-30)))
     if exact_shares is not None:
         report['float64_max_error'] = float((exact_shares.sum(0) - g.double()).abs().max())
+        report['float64_aggregation_pass'] = bool(torch.allclose(exact_shares.sum(0), g.double(), rtol=1e-12, atol=1e-12))
     return report, rows
 
 
@@ -58,7 +60,7 @@ def solve(g, d, n=3, seed=2026, relative_margin=.01, partitions=8, anchors=16):
         raise ValueError('Expected one gradient vector and a nonempty public gradient matrix')
     if not torch.isfinite(g).all() or not torch.isfinite(d).all():
         raise ValueError('Gradients must be finite')
-    if relative_margin < 0 or partitions < 1 or anchors < 1:
+    if not math.isfinite(relative_margin) or relative_margin < 0 or partitions < 1 or anchors < 1:
         raise ValueError('Invalid search budget or relative margin')
     subsets = coalitions(n)
     scale = float((d - g).square().sum(1).median())
