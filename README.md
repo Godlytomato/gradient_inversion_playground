@@ -21,13 +21,17 @@ need CIFAR-10, GPUs, credentials, or access to an experiment database. The CPU
 requirements file is specific to this workflow; CUDA installations require a
 matching PyTorch/torchvision distribution and have not been validated here.
 
-## Sparse gradient disguise experiment
+## Gradient disguise experiment
 
-For the separate three-server, single-image experiment, see
+For the seeded model/dataset gradient decomposition experiment, see
 [the experiment guide](experiments/coalition_disguise/README.md) and
 [the baseline failure review](experiments/coalition_disguise/REVIEW.md).
-It uses explicit trained weights, preserves saved shares, and gates subset
-attacks on paired original-gradient/full-share reconstruction controls.
+Select a model and dataset, draw a seeded sample, decompose its gradient, and
+check full-share reconstruction before attacking all proper subsets. Each subset
+is evaluated against its fixed gradient-nearest disguise and the ground truth.
+New runs require the residual toward that disguise to be shorter and have fewer
+nonzero coordinates than the residual toward the true gradient; the original
+share-sparsity construction remains selectable for comparison.
 
 ## Experiments
 

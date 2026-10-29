@@ -43,7 +43,7 @@ def build_attack(name, args):
                           getattr(args, 'lbfgs_tolerance_change', 1e-15))
             if any(not math.isfinite(value) or value <= 0 for value in tolerances):
                 raise ValueError('LBFGS tolerances must be finite and positive')
-            job.initialization_policy = 'uniform_sigmoid'
+            job.initialization_policy = 'smooth_uniform_sigmoid'
             job.restarts = 4
             job.optimizer_description.parameters.update(
                 tolerance_grad=getattr(args, 'lbfgs_tolerance_grad', 1e-12),
@@ -53,6 +53,11 @@ def build_attack(name, args):
             job.optimizer_description.parameters['lr'] = .01
     elif profile != 'preset':
         raise ValueError('Unknown attack profile')
+    if getattr(args, 'initialization', None) is not None:
+        job.initialization_policy = args.initialization
+    if (job.initialization_policy in {'uniform_sigmoid', 'smooth_uniform_sigmoid'}
+            and (job.pre_update_mods or job.post_update_mods)):
+        raise ValueError('Sigmoid initialization cannot use pixel gradient/update mods; choose a pixel initializer for this preset')
     if args.restarts is not None:
         job.restarts = args.restarts
     if args.lr is not None:
@@ -66,8 +71,8 @@ def build_attack(name, args):
                             patience=args.patience, minimum_change=args.minimum_change)),
                        function_package('max_iterations', dict(limit=args.max_iterations or preset.max_iterations))],
         best_selection=best_selection_description('attack_loss'))
-    description = run_desc(name='coalition_disguise_' + name, model='lenet5',
-                           data=batch('cifar10', 1, list(range(10))),
+    description = run_desc(name='coalition_disguise_' + name, model=getattr(args, 'model', 'lenet5'),
+                           data=batch(getattr(args, 'dataset', 'cifar10'), 1, list(range(getattr(args, 'class_count', 10)))),
                            gradient_transformations=[], attack=job, attack_name=name,
                            observer=config, experiment_seed=args.seed)
     executable = build_run(description)
@@ -156,7 +161,9 @@ class TraceObserver(observer):
         super().close()
 
 
-def attack(model, observation, label, name, args, destination, *, input_shape=(3, 32, 32), class_count=10):
+def attack(model, observation, label, name, args, destination, *, input_shape=None, class_count=None):
+    input_shape = tuple(input_shape or getattr(args, 'input_shape', (3, 32, 32)))
+    class_count = class_count or getattr(args, 'class_count', 10)
     destination.mkdir(exist_ok=True)
     executable = build_attack(name, args)
     configuration = execution_config(executable, args)
