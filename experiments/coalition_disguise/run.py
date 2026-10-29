@@ -68,6 +68,9 @@ def refresh_report(root):
         name, _, hashed = folder.partition('_')
         records.append(dict(model=summary.get('model'), dataset=summary.get('dataset'),
             seed=summary.get('seed'), private_index=summary.get('private_index'),
+            decomposition=summary.get('decomposition', 'historical_sparse'),
+            residual_nnz_gap=summary.get('residual_nnz_gap'),
+            max_disguise_distance_squared=summary.get('max_disguise_distance_squared'),
             preset=summary.get('preset', name),
             profile=summary.get('profile', 'historical_preset'),
             configuration=summary.get('configuration', hashed), coalition=path.parent.name,

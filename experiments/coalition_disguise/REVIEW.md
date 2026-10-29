@@ -172,3 +172,63 @@ to its assigned disguise than to ground truth. The complete machine-readable
 [reference report](reference_runs/lenet5_cifar10_seed2026.json) preserves these
 results; the initialization fix establishes a usable baseline for this case,
 not general evidence that the decomposition attracts reconstructions to disguises.
+
+## Residual simplicity correction: fewer nonzero coordinates
+
+The clarified requirement concerns the residual vectors themselves: for every
+proper subset H and its gradient-nearest disguise D, H-D must be shorter and have
+no more nonzero entries than H-G. New residual-mode runs default to strictly
+fewer entries; a configurable gap of zero permits equality. Share nonzeros are
+a different quantity from these residual counts.
+
+The old saved seed-2026 sparse construction passed the distance inequality but
+failed residual simplicity. For subset 001, the disguise residual had length
+22.1205 versus 22.1359 toward truth, yet contained 83,126 nonzeros versus 55,381.
+The same reversal of residual sparsity occurred in all six proper subsets.
+
+The revised construction projects initializer shares into the reference-gradient
+span, then fits selected disguise coordinates with cancelling adjustments
+orthogonal to that span. Projection can make the true-gradient residual denser;
+coordinate fitting reduces the disguise residual's nonzeros. Both absolute counts
+are reported. Exact aggregation and all numerical constraints are rechecked on
+the actual float32 subset observations; no near-zero threshold inflates the
+number of exact matches. The search ranks absolute distances first and retains
+only fully audited candidates. Global optimality is not guaranteed, and exhausted
+search does not prove infeasibility.
+
+A completed experiment used the same saved model identity, CIFAR-10 image 564,
+100 public images, and identical iDLG/initialization/stopping settings as the
+previous reference. It requested a residual nonzero gap of 1,000 and retained the
+relative margin and baseline MSE target unchanged.
+
+| Quantity | Previous sparse construction | Residual construction |
+| --- | ---: | ---: |
+| Worst squared distance to nearest disguise | 1,943.6391 | 32.2670 |
+| Full-share reconstruction MSE | 0.00274067 | 0.00291235 |
+| Full-share baseline passed at target 0.01 | Yes | Yes |
+| Proper subset reconstructions completed | 6 | 6 |
+| Reconstructions closer to fixed disguise by image MSE | 1 / 6 | 3 / 6 |
+
+Every revised subset passed both gradient conditions:
+
+| Subset | Disguise residual nonzeros | True residual nonzeros | True-image MSE | Fixed-disguise MSE |
+| --- | ---: | ---: | ---: | ---: |
+| 001 | 79,126 | 83,126 | 0.210452 | 0.138873 |
+| 010 | 79,126 | 83,126 | 0.213349 | 0.221453 |
+| 011 | 80,037 | 83,126 | 0.238861 | 0.254243 |
+| 100 | 79,126 | 83,126 | 0.299427 | 0.328240 |
+| 101 | 80,824 | 83,126 | 0.242996 | 0.211030 |
+| 110 | 80,493 | 83,126 | 0.246329 | 0.210137 |
+
+The minimum residual nonzero advantage was 2,302. The float64 complement-pair
+lower bound on the best possible worst squared disguise distance was about
+0.8091; this heuristic remains well above that bound. Passing the gradient
+constraints has not established consistent image reconstruction toward disguises.
+
+All 232 regression tests passed. Independent verification recomputed the true
+gradient and all 100 public gradients, checked both aggregation precisions,
+nearest-disguise identities, exact float32 residual counts, and image MSE/SSIM
+from saved reconstructions. The original saved model, manifests, decomposition
+and subset plan remained byte-identical after a legacy resume check. The
+[machine-readable reference](reference_runs/lenet5_cifar10_seed2026_residual_gap1000.json)
+records inputs, settings, geometry, code fingerprints, and all seven attack rows.

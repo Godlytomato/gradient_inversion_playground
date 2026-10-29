@@ -14,7 +14,9 @@ def input_checks(model, private, label, artifact):
     g, d, shares = (artifact[k] for k in ('g', 'd', 'shares'))
     full = shares.sum(0)
     recomputed = gradient(model, private, label)
-    report, rows = audit(shares, g, d, artifact['epsilon'], artifact['exact_shares'])
+    report, rows = audit(shares, g, d, artifact['epsilon'], artifact['exact_shares'],
+                         residual_nnz_gap=artifact.get('residual_nnz_gap'),
+                         max_disguise_distance_squared=artifact.get('max_disguise_distance_squared'))
     roundtrip = torch.cat([t.flatten() for t in unpack(full, model)])
     inferred = int(unpack(full, model)[-1].argmin())
     return dict(decomposition=report, coalition_geometry=rows,

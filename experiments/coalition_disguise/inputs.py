@@ -15,6 +15,9 @@ from .common import digest, model_digest, tensor_digest, write_json
 
 GENERATION_DEFAULTS = dict(seed=2026, public_count=100, servers=3,
                            relative_margin=.01, partitions=8, anchors=16)
+DECOMPOSITION_DEFAULTS = dict(decomposition='residual', residual_nnz_gap=1,
+                              max_disguise_distance_squared=None)
+LEGACY_DECOMPOSITION = dict(DECOMPOSITION_DEFAULTS, decomposition='sparse')
 
 
 def resolve_settings(args):
@@ -25,6 +28,14 @@ def resolve_settings(args):
     for name, default in GENERATION_DEFAULTS.items():
         if getattr(args, name) is None:
             setattr(args, name, old_args.get(name, default))
+    legacy = old is not None and not any(name in old_args for name in DECOMPOSITION_DEFAULTS)
+    defaults = LEGACY_DECOMPOSITION if legacy else DECOMPOSITION_DEFAULTS
+    for name, default in defaults.items():
+        if getattr(args, name, None) is None:
+            setattr(args, name, old_args.get(name, default))
+    if legacy and any(getattr(args, name) != value for name, value in LEGACY_DECOMPOSITION.items()):
+        raise ValueError('Saved decomposition uses the legacy sparse construction; choose a fresh --output for residual settings')
+    args.legacy_generation_manifest = legacy
     args.model = args.model or (old or {}).get('model', 'lenet5')
     args.dataset = args.dataset or (old or {}).get('dataset', 'cifar10')
     if args.private_index is None and old:
@@ -101,11 +112,14 @@ def prepare_inputs(args, old):
     else:
         state = None
     model = build_model(args.model, definition, private, args.seed, state)
+    generation = {name: getattr(args, name) for name in GENERATION_DEFAULTS}
+    if not args.legacy_generation_manifest:
+        generation.update({name: getattr(args, name) for name in DECOMPOSITION_DEFAULTS})
     manifest = dict(protocol='coalition_workflow_v3', model=args.model, dataset=args.dataset,
         weights_source=weights_source, checkpoint_sha256=checkpoint_hash,
         model_state_sha256=model_digest(model), seed=args.seed, private_index=private_index,
         private_label=int(y), public_indices=public_indices, public_labels=public_labels,
-        arguments={name: getattr(args, name) for name in GENERATION_DEFAULTS},
+        arguments=generation,
         input_shape=list(expected_shape), class_count=definition.class_count,
         private_split='test', public_split='train', preprocessing='ToTensor raw [0,1]', loss='cross_entropy',
         private_tensor_sha256=tensor_digest(private), public_tensor_sha256=tensor_digest(public),

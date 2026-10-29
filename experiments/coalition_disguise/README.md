@@ -5,8 +5,10 @@ The workflow is:
 1. Select a model and dataset.
 2. Draw one private test sample using the seed; select a distinct pool of public
    training disguises using an independent seeded stream.
-3. Compute gradients with that model and construct the proposed sparse cancelling
-   decomposition. Verify aggregation and every nonempty proper subset.
+3. Compute gradients with that model and construct a cancelling decomposition.
+   Verify aggregation and every nonempty proper subset. New runs require the
+   difference toward each subset's nearest disguise to be shorter **and to have
+   fewer nonzero coordinates** than the difference toward the true gradient.
 4. For each subset, mark its closest public disguise **in gradient space**, using
    the actual raw float32 subset sum. Save those assignments before any attack.
 5. Reconstruct the full-share gradient and measure image MSE to ground truth.
@@ -59,6 +61,76 @@ is selected. Defaults are three servers and 100 distinct public disguises.
 `--servers N` enumerates all `2**N - 2` nonempty proper subsets (N from 2 to 8).
 Public gradient storage scales with model size and `--public-count`.
 
+## Shorter and simpler difference vectors
+
+For subset observation `H`, true gradient `G`, and its gradient-nearest public
+disguise `D`, the new default `--decomposition residual` requires:
+
+```text
+squared_L2(H - D) + epsilon <= squared_L2(H - G)
+nnz(H - D) + residual_nnz_gap <= nnz(H - G)
+```
+
+Both conditions must hold for **every** nonempty proper subset. The same `D`
+must satisfy both: the solver never replaces the nearest disguise with a more
+distant candidate merely to pass the sparsity check. The relative margin remains
+`epsilon = relative_margin * median_j squared_L2(D_j - G)`, with
+`--relative-margin 0.01` by default.
+
+`--residual-nnz-gap` defaults to **1**, meaning strictly fewer nonzeros. Set it
+to **0** for the less-than-or-equal condition, or raise it to demand a larger
+advantage. A gap of one is a weak simplicity requirement; the reports show the
+actual counts so it cannot be mistaken for a large reduction. For example:
+
+```bash
+python -m experiments.coalition_disguise.run \
+  --model lenet5 --dataset cifar10 --seed 2026 --servers 3 \
+  --decomposition residual --residual-nnz-gap 1000 \
+  --presets idlg --output results/residual_disguise_seed2026
+```
+
+Nonzeros are counted **exactly**, without an arbitrary near-zero tolerance.
+The audit first computes each actual float32 subset sum, promotes that observation
+and its reference gradients to float64, and counts nonzero residual coordinates.
+Tiny nonzero entries count too. The checks use the observations subsequently
+supplied to reconstruction, rather than ideal pre-rounding shares.
+Projection generally makes the true-gradient residual dense as well. Inspect
+both absolute nonzero counts and both lengths when comparing constructions.
+
+The construction uses the original sparse search as an initializer, ranking its
+candidates by absolute disguise distances after projection into the span of `G`
+and the public gradients. Projection reduces absolute distances and preserves
+relative margins in exact arithmetic. The solver then matches selected disguise
+coordinates using cancelling adjustments orthogonal to that span. Compensating
+on unused coordinates preserves aggregation and, in exact arithmetic, every
+relative margin. These adjustments can increase absolute distances from the
+projected values. All final conditions are checked again after float32 rounding.
+
+Among accepted candidates, the solver lexicographically minimizes the sorted
+squared disguise distances, from largest to smallest; residual nonzero counts
+then break ties, followed by share nonzeros. This is a restricted heuristic over
+the searched initializers and coordinate patterns, not a global L0 or distance
+optimality guarantee. `--partitions` controls both initializer partitions and the
+number of coordinate-pattern attempts; `--anchors` controls initializer repair
+coordinates. The revised shares generally become dense: the simplicity measure
+now applies to the **difference vectors**.
+
+An optional `--max-disguise-distance-squared VALUE` adds a hard absolute-distance
+cap for every proper subset. Its units are a sum of squared gradient entries.
+There is no automatic default or silent relaxation. `decomposition_search.json`
+records the ranked distances and the necessary exact-aggregation lower bound
+`min_jk squared_L2(G-D_j-D_k)/4` on the worst squared distance. Satisfying that
+bound does not establish feasibility of all subset constraints.
+
+If no candidate passes, the runner saves `decomposition_failure.json` and
+launches no reconstruction jobs. Search exhaustion is not an infeasibility proof.
+Use `--prepare-only` to inspect the geometry and counts before paying for attacks.
+
+The original share-sparsity construction remains available with
+`--decomposition sparse` in a fresh output directory. It reports residual
+nonzero counts but does not require the residual sparsity condition.
+`--residual-nnz-gap` applies only to the residual construction.
+
 ## What counts as a successful baseline
 
 The selected full-share reconstruction must have image MSE below
@@ -100,6 +172,15 @@ all six subset reconstructions and their fixed-disguise/ground-truth distances.
 Only one of the six was closer to its marked disguise by MSE; this run therefore
 does not show consistent attraction to the marked disguise.
 
+The subsequent [residual-gap-1000 reference run](reference_runs/lenet5_cifar10_seed2026_residual_gap1000.json)
+uses the same model, image and public pool, with identical attack and stopping
+settings. All six subsets passed the new shorter/sparser residual constraints,
+with a minimum nonzero advantage of 2,302. Worst squared disguise distance fell
+from 1,943.64 in the original sparse decomposition to 32.27. The baseline passed
+at MSE 0.00291, and all six subset attacks completed; three of six reconstructions
+were closer to their marked disguise by MSE. These are mixed image results despite
+every gradient condition passing. See the [review](REVIEW.md) for the comparison.
+
 ## Per-subset measurements
 
 For a subset observation H, the preassigned disguise is:
@@ -121,6 +202,10 @@ The report includes:
 | `disguise_index`, `disguise_slot`, `disguise_label` | Fixed public training image and its pool slot |
 | `gradient_distance_to_disguise` | Squared L2 from subset sum to its marked disguise gradient |
 | `gradient_distance_to_ground_truth` | Squared L2 from subset sum to the true gradient |
+| `gradient_l2_to_disguise`, `gradient_l2_to_ground_truth` | Corresponding Euclidean lengths |
+| `disguise_residual_nnz`, `ground_truth_residual_nnz` | Exact nonzero counts in the two difference vectors |
+| `residual_nnz_advantage` | True-gradient residual nonzeros minus disguise residual nonzeros |
+| `residual_sparsity_required`, `residual_sparsity_pass` | Whether simplicity is mandatory and whether the counts pass |
 | `ground_truth_mse` | Reconstructed image versus private image |
 | `disguise_mse` | Reconstructed image versus marked disguise image |
 | `disguise_mse_advantage` | Ground-truth MSE minus disguise MSE; positive means closer to the disguise |
@@ -140,6 +225,10 @@ assigned disguise, so its disguise columns are empty.
 - `model_state_v3.pt`: fixed model state, including seeded random initialization.
 - `decomposition.pt`, `decomposition_hash.json`: exact and float32 shares, original
   and public gradients, coordinate ownership, repair coefficients and metadata.
+- In residual mode the artifact also retains the initializer shares and the
+  selected coordinate matches. `decomposition_search.json` records attempts,
+  distances, nonzero counts, and the complement-pair lower bound.
+- `decomposition_failure.json`: failed search diagnostics; no attacks are started.
 - `input_checks_v3.json`: aggregation and all coalition geometry checks.
 - `subsets_v3.json`: every subset and its fixed disguise assignment, saved before
   attacks. For three servers: 001, 010, 011, 100, 101, 110.
@@ -156,6 +245,9 @@ assignments and job input identities are checked. Different model/data/sample
 settings require a new output directory. Execution-code changes create fresh
 attack configurations while retaining the decomposition. Old result folders
 remain intact; historical report rows lack the new assigned-disguise fields.
+The decomposition method, residual nonzero gap and absolute cap are immutable
+generation settings. Existing directories automatically retain their original
+sparse construction; request a fresh `--output` for the new residual constraints.
 
 Existing LeNet5/CIFAR10 output directories retain their selected image (for
 example 193) and public pool. Supply the original checkpoint the first time you
@@ -183,5 +275,9 @@ three model choices with both dataset shapes. Geometry and reconstruction tests
 also cover aggregation, rounding, margins, sparse repair, optimizer diagnostics,
 label consistency and preservation of old artifacts.
 
-The sparse solver's guarantee concerns relative gradient distances. The image
-comparisons above are the empirical test of the proposed disguise behavior.
+The residual tests also reject decompositions whose disguise residual is shorter
+but denser, distinguish strict sparsity from ties, check actual float32 nonzeros,
+validate projection invariants, and prevent attacks after decomposition failure.
+
+These guarantees concern gradient residuals. The image comparisons are the
+empirical test of the proposed disguise reconstruction behavior.

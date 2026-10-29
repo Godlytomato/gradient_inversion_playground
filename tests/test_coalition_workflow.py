@@ -18,6 +18,7 @@ from experiments.coalition_disguise.common import digest, gradient, model_digest
 from experiments.coalition_disguise.geometry import audit
 from experiments.coalition_disguise.inputs import build_model, select_indices
 from experiments.coalition_disguise.workflow import main, evaluate_result, subset_plan
+from experiments.coalition_disguise.residual_solver import ResidualSearchError
 
 
 class SeededCoalitionWorkflowTests(unittest.TestCase):
@@ -104,11 +105,40 @@ class SeededCoalitionWorkflowTests(unittest.TestCase):
                 self.assertIn('ground_truth_mse', row)
                 self.assertEqual(row['model'], 'tiny')
                 self.assertEqual(row['dataset'], 'toy')
+                self.assertLess(row['disguise_residual_nnz'], row['ground_truth_residual_nnz'])
+                self.assertTrue(row['residual_sparsity_pass'])
             immutable = {p: digest(root/p) for p in ['manifest.json', 'model_state_v3.pt', 'decomposition.pt', 'subsets_v3.json']}
             with patch('reconstruction.optimization.optimization_attack.run_attempt', side_effect=AssertionError('reran completed attack')):
                 resumed = main(self.argv(root))
             self.assertEqual(status, resumed)
             self.assertEqual(immutable, {p: digest(root/p) for p in immutable})
+
+    def test_decomposition_failure_saves_diagnostics_and_launches_no_attacks(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):
+            root = Path(tmp)/'experiment'
+            error = ResidualSearchError('No candidate met the requested residual gap', dict(residual_nnz_gap=1))
+            with patch('experiments.coalition_disguise.workflow.solve_residual', side_effect=error), \
+                    patch('experiments.coalition_disguise.workflow.attack') as attack:
+                with self.assertRaises(ResidualSearchError):
+                    main(self.argv(root))
+            attack.assert_not_called()
+            self.assertFalse((root/'decomposition.pt').exists())
+            saved = json.loads((root/'decomposition_failure.json').read_text())
+            self.assertEqual(saved['state'], 'decomposition_failed')
+            self.assertEqual(saved['diagnostics']['residual_nnz_gap'], 1)
+
+    def test_residual_settings_are_frozen_and_inherited_on_resume(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):
+            root = Path(tmp)/'experiment'
+            main(self.argv(root, '--prepare-only', '--residual-nnz-gap', '2'))
+            before = digest(root/'decomposition.pt')
+            main(['--output', str(root), '--prepare-only'])
+            self.assertEqual(before, digest(root/'decomposition.pt'))
+            for options in (['--residual-nnz-gap', '3'], ['--decomposition', 'sparse'],
+                            ['--max-disguise-distance-squared', '0']):
+                with self.assertRaisesRegex(ValueError, 'differ'):
+                    main(self.argv(root, '--prepare-only', *options))
+            self.assertEqual(before, digest(root/'decomposition.pt'))
 
     def test_failed_baseline_launches_no_subset_attacks(self):
         with tempfile.TemporaryDirectory() as tmp, redirect_stdout(StringIO()):

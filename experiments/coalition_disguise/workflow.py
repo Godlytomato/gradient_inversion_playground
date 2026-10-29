@@ -15,6 +15,7 @@ from .common import digest, gradient, tensor_digest, write_json
 from .diagnostics import input_checks, inspect_saved_runs
 from .geometry import observe, solve
 from .inputs import prepare_inputs, resolve_settings
+from .residual_solver import solve_residual
 
 
 def subset_plan(artifact, checks, public_indices, public_labels):
@@ -23,12 +24,20 @@ def subset_plan(artifact, checks, public_indices, public_labels):
     for row in checks['coalition_geometry']:
         slot = row['public_slot']
         observation = observe(artifact['shares'], row['servers'])
-        plans.append(dict(subset=f"{row['coalition']:0{len(artifact['shares'])}b}",
+        plan = dict(subset=f"{row['coalition']:0{len(artifact['shares'])}b}",
             servers=row['servers'], disguise_slot=slot,
             disguise_index=public_indices[slot], disguise_label=public_labels[slot],
             gradient_distance_to_disguise=row['public_distance'],
             gradient_distance_to_ground_truth=row['private_distance'],
-            gradient_margin=row['margin'], observation_sha256=tensor_digest(observation)))
+            gradient_margin=row['margin'], observation_sha256=tensor_digest(observation))
+        if 'decomposition_mode' in artifact:
+            plan.update(gradient_l2_to_disguise=row['public_norm'], gradient_l2_to_ground_truth=row['private_norm'],
+                disguise_residual_nnz=row['disguise_residual_nnz'],
+                ground_truth_residual_nnz=row['ground_truth_residual_nnz'],
+                residual_nnz_advantage=row['residual_nnz_advantage'],
+                residual_sparsity_required=artifact.get('residual_nnz_gap') is not None,
+                residual_sparsity_pass=row['residual_sparsity_pass'])
+        plans.append(plan)
     return plans
 
 
@@ -51,7 +60,9 @@ def evaluate_result(model, image, private, public, label, observation, artifact,
 
 def save_result(destination, summary, image, model, private, public, label, observation, artifact, public_indices, args, manifest, assigned=None):
     summary.update(workflow_protocol='fixed_disguise_v3', model=args.model, dataset=args.dataset,
-                   seed=args.seed, private_index=manifest['private_index'])
+                   seed=args.seed, private_index=manifest['private_index'], decomposition=args.decomposition,
+                   residual_nnz_gap=args.residual_nnz_gap if args.decomposition == 'residual' else None,
+                   max_disguise_distance_squared=args.max_disguise_distance_squared)
     summary['evaluation'] = evaluate_result(model, image, private, public, label, observation,
                                             artifact, public_indices, summary['best_metrics'], assigned)
     write_json(destination / 'summary.json', summary)
@@ -77,6 +88,12 @@ def parse_args(argv=None):
     parser.add_argument('--relative-margin', type=float)
     parser.add_argument('--partitions', type=int)
     parser.add_argument('--anchors', type=int)
+    parser.add_argument('--decomposition', choices=['residual', 'sparse'],
+                        help='Default: residual (shorter and sparser differences); saved runs retain their construction')
+    parser.add_argument('--residual-nnz-gap', type=int,
+                        help='Require at least this many fewer nonzeros toward the nearest disguise (default 1; 0 allows ties)')
+    parser.add_argument('--max-disguise-distance-squared', type=float,
+                        help='Optional hard cap on every subset\'s squared distance to its nearest disguise gradient')
     parser.add_argument('--presets', nargs='+', choices=['idlg', 'dlg', 'geiping'], default=['idlg'])
     parser.add_argument('--attack-profile', choices=['calibrated', 'preset'], default='calibrated')
     parser.add_argument('--initialization', choices=['random', 'uniform', 'uniform_sigmoid',
@@ -97,6 +114,7 @@ def parse_args(argv=None):
     modes.add_argument('--diagnose-only', action='store_true')
     modes.add_argument('--baseline-only', action='store_true')
     args = parser.parse_args(argv)
+    args.residual_gap_explicit = args.residual_nnz_gap is not None
     if not math.isfinite(args.baseline_mse_target) or args.baseline_mse_target <= 0:
         parser.error('baseline-mse-target must be finite and positive')
     return args
@@ -105,9 +123,16 @@ def parse_args(argv=None):
 def execute(args):
     torch.set_num_threads(2)
     old = resolve_settings(args)
+    if args.decomposition == 'sparse' and args.residual_gap_explicit:
+        raise ValueError('--residual-nnz-gap requires the residual decomposition; it cannot be applied to legacy sparse shares')
     if (args.public_count < 1 or args.partitions < 1 or args.anchors < 1
             or not math.isfinite(args.relative_margin) or args.relative_margin < 0):
         raise ValueError('Public count/search budgets must be positive; relative margin must be finite and nonnegative')
+    if args.residual_nnz_gap < 0:
+        raise ValueError('Residual nonzero gap must be nonnegative')
+    if args.max_disguise_distance_squared is not None and (
+            not math.isfinite(args.max_disguise_distance_squared) or args.max_disguise_distance_squared < 0):
+        raise ValueError('Maximum squared disguise distance must be finite and nonnegative')
     definition = dataset_dict[args.dataset]
     args.class_count = definition.class_count
     args.input_shape = (definition.input_channels, *definition.input_dimensions)
@@ -124,15 +149,34 @@ def execute(args):
         if digest(artifact_path) != expected:
             raise ValueError('Saved decomposition hash mismatch')
         artifact = torch.load(artifact_path, map_location='cpu', weights_only=True)
+        if (args.decomposition == 'residual' and artifact.get('residual_nnz_gap') != args.residual_nnz_gap
+                or artifact.get('max_disguise_distance_squared') != args.max_disguise_distance_squared):
+            raise ValueError('Saved decomposition constraints differ; choose a fresh --output')
         print(f'Reusing shares: {artifact_path}', flush=True)
     else:
         g = gradient(model, private, label)
         d = torch.stack([gradient(model, image[None], torch.tensor([target]))
                          for image, target in zip(public, public_labels)])
-        artifact = solve(g, d, args.servers, args.seed, args.relative_margin, args.partitions, args.anchors)
-        artifact.update(g=g, d=d)
+        try:
+            options = dict(max_disguise_distance_squared=args.max_disguise_distance_squared)
+            solver = solve
+            if args.decomposition == 'residual':
+                solver = solve_residual
+                options['residual_nnz_gap'] = args.residual_nnz_gap
+            artifact = solver(g, d, args.servers, args.seed, args.relative_margin, args.partitions, args.anchors, **options)
+        except RuntimeError as error:
+            failure = dict(state='decomposition_failed', message=str(error),
+                           diagnostics=getattr(error, 'diagnostics', None))
+            write_json(args.output / 'decomposition_failure.json', failure)
+            print(f'Decomposition failed; no reconstruction jobs launched. See {args.output / "decomposition_failure.json"}', flush=True)
+            raise
+        artifact.update(g=g, d=d, decomposition_mode=args.decomposition,
+                        max_disguise_distance_squared=args.max_disguise_distance_squared)
         torch.save(artifact, artifact_path)
         write_json(args.output / 'decomposition_hash.json', dict(sha256=digest(artifact_path)))
+        (args.output / 'decomposition_failure.json').unlink(missing_ok=True)
+    if 'search_diagnostics' in artifact:
+        write_json(args.output / 'decomposition_search.json', artifact['search_diagnostics'])
     checks = input_checks(model, private, label, artifact)
     write_json(args.output / 'input_checks_v3.json', checks)
     if args.diagnose_only:
@@ -153,6 +197,9 @@ def execute(args):
     save_image(private, args.output / 'ground_truth.png')
     save_image(public, args.output / 'disguises.png')
     print(f'Verified decomposition; {len(plans)} proper subsets, each with a fixed gradient-nearest disguise.', flush=True)
+    if audit['residual_sparsity_required']:
+        print(f'Residual checks passed for every subset: minimum nonzero advantage={audit["minimum_residual_nnz_advantage"]}; '
+              f'worst squared disguise distance={audit["maximum_disguise_distance_squared"]:.6g}.', flush=True)
     if args.prepare_only:
         return checks
     from .run import refresh_report
