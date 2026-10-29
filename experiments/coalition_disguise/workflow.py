@@ -79,6 +79,9 @@ def parse_args(argv=None):
     parser.add_argument('--anchors', type=int)
     parser.add_argument('--presets', nargs='+', choices=['idlg', 'dlg', 'geiping'], default=['idlg'])
     parser.add_argument('--attack-profile', choices=['calibrated', 'preset'], default='calibrated')
+    parser.add_argument('--initialization', choices=['random', 'uniform', 'uniform_sigmoid',
+                        'smooth_uniform', 'smooth_uniform_sigmoid'],
+                        help='Optional override; calibrated iDLG/DLG starts from a smooth seeded image')
     parser.add_argument('--restarts', type=int)
     parser.add_argument('--lr', type=float)
     parser.add_argument('--patience', type=int, default=200)

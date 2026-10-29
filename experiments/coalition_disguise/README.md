@@ -76,11 +76,29 @@ never terminates an optimizer or selects its returned image.
 `--presets idlg dlg geiping` runs the same workflow separately for each attack.
 Each has its own baseline and subset jobs. `--attack-profile calibrated` is the
 default: bounded sigmoid-coordinate LBFGS for iDLG/DLG with four restarts and
-uniform initialization; Geiping uses uniform initialization, its existing clamp,
+smooth seeded initialization; Geiping uses uniform initialization, its existing clamp,
 cosine/TV/sign configuration, eight restarts, and learning rate .01. The original
 registered settings remain available with `--attack-profile preset`.
 `--lr`, `--restarts`, and stopping parameters can be set explicitly. All settings
 are saved; the same configuration and seeds apply to baseline and subsets.
+
+The calibrated iDLG/DLG initialization starts from a random 4x4 grid per channel,
+resized smoothly to the image dimensions before creating full-resolution sigmoid
+coordinates. The optimizer still controls every pixel. This avoids starting with
+pixel noise that weakly observed gradient directions may preserve; no ground-truth
+or disguise pixels are used in initialization. The previous pixel-noise start is
+available with `--initialization uniform_sigmoid`. The original registered presets
+remain unchanged. Initialization choice is recorded in each job's attack config.
+
+On the locally reproduced seed-2026 CIFAR-10 image-564 case, changing only the
+initialization reduced MSE from 0.04188 to 0.00289 at the same diagnostic budget.
+The standard four-restart run reached MSE 0.00274 and SSIM 0.944. This validates
+this seeded baseline case; other model/sample combinations retain the MSE gate.
+
+The [completed reference run](reference_runs/lenet5_cifar10_seed2026.json) records
+all six subset reconstructions and their fixed-disguise/ground-truth distances.
+Only one of the six was closer to its marked disguise by MSE; this run therefore
+does not show consistent attraction to the marked disguise.
 
 ## Per-subset measurements
 

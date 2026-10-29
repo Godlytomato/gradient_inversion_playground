@@ -43,7 +43,7 @@ def build_attack(name, args):
                           getattr(args, 'lbfgs_tolerance_change', 1e-15))
             if any(not math.isfinite(value) or value <= 0 for value in tolerances):
                 raise ValueError('LBFGS tolerances must be finite and positive')
-            job.initialization_policy = 'uniform_sigmoid'
+            job.initialization_policy = 'smooth_uniform_sigmoid'
             job.restarts = 4
             job.optimizer_description.parameters.update(
                 tolerance_grad=getattr(args, 'lbfgs_tolerance_grad', 1e-12),
@@ -53,6 +53,11 @@ def build_attack(name, args):
             job.optimizer_description.parameters['lr'] = .01
     elif profile != 'preset':
         raise ValueError('Unknown attack profile')
+    if getattr(args, 'initialization', None) is not None:
+        job.initialization_policy = args.initialization
+    if (job.initialization_policy in {'uniform_sigmoid', 'smooth_uniform_sigmoid'}
+            and (job.pre_update_mods or job.post_update_mods)):
+        raise ValueError('Sigmoid initialization cannot use pixel gradient/update mods; choose a pixel initializer for this preset')
     if args.restarts is not None:
         job.restarts = args.restarts
     if args.lr is not None:

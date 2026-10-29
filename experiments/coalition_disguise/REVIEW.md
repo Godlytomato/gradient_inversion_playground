@@ -130,3 +130,45 @@ setup and observability, not a guarantee of inversion success. If both paired
 controls still fail, investigate conditioning, parameterization saturation and
 additional optimizer configurations before proceeding to coalition claims.
 Adaptive attacks remain separate future work.
+
+
+## Seeded random LeNet, CIFAR-10 sample 564: initialization correction
+
+The later workflow's seed-2026 run uses seeded random weights and test image 564,
+which is a different case from the trained-checkpoint/image-193 results above.
+The user reported MSE 0.03958 and objective 4.517e-8 with a flat tail. Local
+reproduction showed MSE 0.04188, objective 5.406e-8, and zero pixel movement.
+
+Controlled probes held the local full-share observation, model, loss, seed, and
+150-outer-step budget fixed while changing initialization:
+
+| Initialization | Image MSE | Squared gradient residual |
+| --- | ---: | ---: |
+| Independent random pixels, bounded sigmoid coordinates | 0.041876 | 5.406e-8 |
+| Random 4x4 grid resized to a smooth image, bounded sigmoid coordinates | 0.002886 | 3.018e-8 |
+
+Separate loss-rescaling probes improved gradient matching substantially while
+leaving pixel MSE near 0.039. That is insufficient evidence to attribute the
+failure solely to LBFGS tolerances. The initialization comparison demonstrates
+that injected pixel noise was a consequential experimental choice in this case.
+It does not prove the precise internal stopping condition or unique inversion.
+
+The calibrated iDLG/DLG profile now uses the smooth seeded initializer. Only the
+starting image is smoothed; all pixels remain trainable. Original presets and the
+previous initializer remain explicitly selectable. The method uses no private or
+public reference image content, and applies identically to baseline and subsets.
+No loss scaling, decomposition change, MSE-target relaxation or oracle selection
+was added to the default.
+
+The standard four-restart full-share control reached MSE 0.00274067 and SSIM
+0.943994 with the unchanged MSE target 0.01, allowing the subset stage to start.
+This evidence concerns this seeded random-model case; trained checkpoint results
+and other samples must pass their own baseline gates.
+
+All six subset attacks subsequently completed. Their recorded image MSEs were
+independently recomputed against ground truth and the preassigned disguise, and
+the saved decomposition hash remained unchanged. Only one of six had lower MSE
+to its assigned disguise than to ground truth. The complete machine-readable
+[reference report](reference_runs/lenet5_cifar10_seed2026.json) preserves these
+results; the initialization fix establishes a usable baseline for this case,
+not general evidence that the decomposition attracts reconstructions to disguises.
