@@ -1,187 +1,169 @@
-# Secondary experiment: sparse gradient disguise
+# Seeded gradient decomposition experiment
 
-This experiment separates two claims for CIFAR-10 test image 193, 100 public
-training images, and three servers:
+The workflow is:
 
-1. All shares recover the private gradient, while every proper coalition sum is
-   closer in squared gradient distance to a public dummy gradient.
-2. Gradient inversion of those coalition observations reconstructs images closer
-   to public dummy images than to the private image. This must be measured; the
-   first claim does not imply it.
+1. Select a model and dataset.
+2. Draw one private test sample using the seed; select a distinct pool of public
+   training disguises using an independent seeded stream.
+3. Compute gradients with that model and construct the proposed sparse cancelling
+   decomposition. Verify aggregation and every nonempty proper subset.
+4. For each subset, mark its closest public disguise **in gradient space**, using
+   the actual raw float32 subset sum. Save those assignments before any attack.
+5. Reconstruct the full-share gradient and measure image MSE to ground truth.
+6. If the full reconstruction passes the configured MSE target, reconstruct every
+   proper subset. Measure its reconstruction against **that subset's preassigned
+   disguise image** and against the ground-truth image.
 
-No production SQLite database is opened. The model, registered attacks, losses,
-optimization engine, and observer/stopping policies come from the Playground.
-See [the implementation review](REVIEW.md) for the observed baseline failure,
-its limits, and the corrections. Trained weights and historical result tensors
-from the user's computer are not included in this repository.
+There is one full-share baseline per attack configuration. There is no mandatory
+second original-gradient control or additional calibration stage. The original
+Playground attack engine is reused. No research SQLite database is opened.
 
-## Start with the existing checkpoint and shares
+## Run
 
-Activate your Python environment and run from the repository root. If the
-checkpoint is at the path reported in the user's terminal:
-
-```bash
-python -m experiments.coalition_disguise.run \
-  --checkpoint results/cifar10_disguise/lenet5_fixed_state_dict.pt \
-  --output results/secondary_disguise_193 --diagnose-only
-```
-
-This inspects saved shares and old reconstructions without rerunning attacks or
-changing old artifacts. It writes `diagnosis_v2.json`, including raw versus
-clamped image MSE, pixel range, out-of-range fraction, identical final objective
-rows, and the true-label L2 objective's derivative with respect to the image.
-These are explicitly evaluation-only diagnostics. If there are no saved shares,
-use `--prepare-only` instead to generate and audit them first.
-
-Run the corrected paired baseline controls:
+Activate your existing Python environment and run from the repository root:
 
 ```bash
 python -m experiments.coalition_disguise.run \
-  --checkpoint results/cifar10_disguise/lenet5_fixed_state_dict.pt \
-  --output results/secondary_disguise_193 \
-  --presets idlg --baseline-only
+  --model lenet5 --dataset cifar10 --seed 2026 \
+  --presets idlg \
+  --output results/disguise_lenet5_cifar10_seed2026
 ```
 
-The default `--attack-profile calibrated` applies recorded modifications:
+Models: `lenet5`, `resnet18`, `resnet50`.
+Datasets: `cifar10`, `mnist` (raw [0,1] tensors, cross-entropy, batch size one).
+The model is adapted to the dataset's channels, dimensions and class count.
 
-| Attack | Initialization and domain | Restarts | Optimizer changes |
-| --- | --- | ---: | --- |
-| iDLG / DLG | Uniform raw pixels in (0.05,0.95); optimize sigmoid coordinates, so every trial image remains in [0,1] | 4 | LBFGS `tolerance_grad=1e-12`, `tolerance_change=1e-15` |
-| Geiping | Uniform raw pixels; existing clamp, cosine loss, sign update, and TV penalty | 8 | Adam learning rate 0.01 |
-
-Sigmoid coordinates avoid projecting LBFGS steps after its line search and
-invalidating its curvature history. This changes optimization conditioning;
-it does not guarantee recovery. Image-coordinate and variable-coordinate
-gradient norms are logged so sigmoid saturation can also be investigated.
-Original registered presets are unchanged: `--attack-profile preset` uses their
-Gaussian initialization, optimizer defaults, and restart counts. CLI overrides
-`--lr` and `--restarts` apply to either profile. Effective settings, including
-optimizer defaults, code hashes, versions, observation/model hashes, and attack
-label information are saved per job.
-
-Both controls use **identical settings and seeds**:
-
-1. `full`: sum of the actual saved float32 shares (always runs first).
-2. `original_control`: undecomposed private gradient, explicitly identified as a
-   diagnostic positive control. It is never substituted for the full-share sum.
-
-`calibration.json` reports which stage failed and the difference between the
-control reconstructions. If both controls fail, the baseline inversion remains
-uncalibrated. If only the share-sum control fails, aggregation sensitivity or a
-different optimization basin needs investigation before interpreting privacy.
-
-To continue to all six coalitions when the controls pass:
+By default, the model uses seeded random weights, which are saved with the run.
+A checkpoint is optional:
 
 ```bash
 python -m experiments.coalition_disguise.run \
+  --model lenet5 --dataset cifar10 --seed 2026 \
   --checkpoint results/cifar10_disguise/lenet5_fixed_state_dict.pt \
-  --output results/secondary_disguise_193 --presets idlg
+  --output results/disguise_trained_seed2026
 ```
 
-Completed controls are reused. Add `dlg geiping` to `--presets` to evaluate those
-configurations independently. Each must pass its own paired calibration gate.
+Use `--data` to select the dataset directory (default `data/`). If a dataset is
+missing, explicitly allow torchvision to fetch it with `--download`:
 
-## Calibration, stopping, and selection
+```bash
+python -m experiments.coalition_disguise.run \
+  --model lenet5 --dataset mnist --seed 2026 --download \
+  --output results/disguise_lenet5_mnist_seed2026
+```
 
-Both selected control reconstructions must have private-image MSE < 0.01, valid
-pixel range, and all configured restarts stopped by objective stagnation. No
-image similarity criterion stops an attempt or selects its returned image.
-The existing `no_improvement` policy watches `attack_loss`, with patience 200
-and absolute `--minimum-change 1e-10` by default. Internal LBFGS tolerances are
-separate from this observer policy. Optional `--max-iterations` provides a safety
-cap; exhausting it fails calibration. Stall-only runs may be long.
+Use `--private-index 193` to override random sample selection. The chosen index,
+label, model state, sample hashes, public indices and generation settings are
+saved. Independent streams prevent model construction from changing which sample
+is selected. Defaults are three servers and 100 distinct public disguises.
+`--servers N` enumerates all `2**N - 2` nonempty proper subsets (N from 2 to 8).
+Public gradient storage scales with model size and `--public-count`.
 
-The shared run builder requires a safety cap. This experiment validates all
-components with that cap, then removes only its own resolved and recorded cap
-when stall-only execution was requested. Shared validation is unchanged.
+## What counts as a successful baseline
 
-Private/public images and the original gradient are absent from coalition
-attack information. The original gradient appears only as the explicitly
-identified undecomposed control's observation. Geiping receives a known label;
-iDLG infers one; DLG optimizes soft labels. Selection across steps and restarts
-always minimizes the attacker-visible objective. Evaluation occurs afterward.
+The selected full-share reconstruction must have image MSE below
+`--baseline-mse-target` (default `0.01`). This is an explicit post-attack gate.
+If it fails, the run records `baseline_failed` and launches no subset attacks.
+The runner never silently changes the target or claims the baseline passed.
 
-The new generic initializers and parameterized-image support are opt-in additions
-to the shared engine. Existing preset descriptions and hashes are unchanged.
-Pixel gradient/update mods are rejected for parameterized images; the calibrated
-sigmoid path is used only for iDLG/DLG, whose presets have none.
+Attack optimization and image selection use only attacker-visible objectives.
+The existing `no_improvement` policy watches attack loss, with patience 200 and
+minimum change 1e-10 by default. `--max-iterations` optionally caps each restart.
+After the attack ends, the selected image's MSE decides whether subsets run;
+there is no extra gate based on which stopping policy fired. Ground-truth MSE
+never terminates an optimizer or selects its returned image.
 
-## Inputs, decomposition, and safe reuse
+`--presets idlg dlg geiping` runs the same workflow separately for each attack.
+Each has its own baseline and subset jobs. `--attack-profile calibrated` is the
+default: bounded sigmoid-coordinate LBFGS for iDLG/DLG with four restarts and
+uniform initialization; Geiping uses uniform initialization, its existing clamp,
+cosine/TV/sign configuration, eight restarts, and learning rate .01. The original
+registered settings remain available with `--attack-profile preset`.
+`--lr`, `--restarts`, and stopping parameters can be set explicitly. All settings
+are saved; the same configuration and seeds apply to baseline and subsets.
 
-Supply a trained RGB CIFAR LeNet5 **state_dict** compatible with
-`models.lenet.LeNet5` adapted to 3 channels and 32x32 inputs. CIFAR must already
-be under `data/`; this command does not train or download anything. Preprocessing
-is `ToTensor`, raw [0,1], with cross-entropy loss. Tensor compatibility is checked;
-checkpoint training provenance must be established separately.
+## Per-subset measurements
 
-Coordinates are randomly assigned to servers, followed if needed by cancelling
-single-coordinate perturbations `t * alpha[i]`, with `sum(alpha) == 0`.
-The solver searches public gradients bracketing a coordinate and active server
-sets with one negative coefficient. Squared-distance margins are affine in `t`;
-it searches nonnegative boundaries and keeps the first feasible one per candidate.
-Among audited candidates, extra nonzeros are minimized before nearest-public
-distances. This restricted heuristic does not establish global optimality or
-prove infeasibility when its budget is exhausted.
+For a subset observation H, the preassigned disguise is:
 
-Observations are **raw sums**, never N/|S| rescaled. The full set is excluded
-from disguise verification. Audits independently check float64 construction,
-float32 serialization, every proper coalition, overlaps, nonzeros, norms, and
-amplification. Dense artifacts do not implement sparse wire/storage costs.
+```text
+j = argmin_j squared_L2(H, public_gradient[j])
+```
 
-Existing decomposition artifacts, original manifest, and historical attack
-folders are preserved. Decomposition compatibility uses checkpoint/data hashes,
-parameter ordering, public indices, preprocessing, and generation arguments.
-A reconstruction code update no longer invalidates shares. Every reuse checks
-the saved artifact hash and recomputes the current private gradient. Execution
-code/configuration changes create new hashed attack folders, so old failures
-are never mistaken for corrected runs. Different decomposition inputs require a
-fresh output directory. If you originally changed generation options, pass those
-same options again.
+Its identity is frozen before reconstruction. Even if the reconstructed image
+looks closer to another public image, evaluation still uses the marked disguise.
+This is not a post-reconstruction search over the image pool.
 
-## Outputs
+The report includes:
 
-- `input_checks_v2.json`, `audit_v2.json`, `coalition_geometry_v2.csv`: verified
-  input routing, label inference, construction/serialization, and six coalitions.
-- `decomposition.pt`: original/public gradients, exact/serialized shares,
-  ownership, repair coordinate, coefficients, magnitude, and solver metadata.
-- Per job: `job.json`, `attack_config.json`, `trajectory.csv`, `summary.json`,
-  `reconstruction.pt`, reconstruction PNG, and comparison PNG (private,
-  reconstruction, best-SSIM public image).
-- Per configuration: `calibration.json`, with a stage-specific diagnosis.
-- `report.json` / `report.csv`: all evaluated configurations, including historical
-  ones. Configurations and profiles are separate rows, never silently replaced.
+| Column | Meaning |
+| --- | --- |
+| `model`, `dataset`, `seed`, `private_index` | Selected experimental inputs |
+| `coalition` / `subset` | Server bit mask; `full` is the baseline |
+| `disguise_index`, `disguise_slot`, `disguise_label` | Fixed public training image and its pool slot |
+| `gradient_distance_to_disguise` | Squared L2 from subset sum to its marked disguise gradient |
+| `gradient_distance_to_ground_truth` | Squared L2 from subset sum to the true gradient |
+| `ground_truth_mse` | Reconstructed image versus private image |
+| `disguise_mse` | Reconstructed image versus marked disguise image |
+| `disguise_mse_advantage` | Ground-truth MSE minus disguise MSE; positive means closer to the disguise |
+| `ground_truth_ssim`, `disguise_ssim` | Corresponding image similarities |
+| `attack_loss`, `gradient_l2_squared` | Attacker objective and separately evaluated gradient residual |
+| `iterations`, `restarts`, `stopping_reason` | Reconstruction effort and stopping |
 
-Traces record objective, pixel range, out-of-range fraction, update size, inferred
-or optimized label, and periodically the objective derivatives in image and
-optimization coordinates (`--diagnostics-interval`, default 20). Summaries include
-restart effort and stopping reasons. Zero image movement plus flat loss indicates
-an ineffective search, not proof of privacy or successful image recovery.
+Image MSE is mean squared raw pixel distance; gradient distances are squared
+Euclidean sums. Both images have the same shape, so their MSEs are directly
+comparable. DLG gradient residuals use its selected soft labels; a separate
+true-label residual remains an evaluation-only diagnostic. The baseline has no
+assigned disguise, so its disguise columns are empty.
 
-Evaluation records private/public MSE and SSIM, best public indices, advantages,
-actual-label gradient L2 mismatch, and a separately named true-label diagnostic.
-DLG's selected soft labels are retained, so its gradient mismatch is evaluated
-with its actual selected labels. Cosine/regularized objectives remain distinct
-from squared L2 gradient residuals. PNGs clamp for display; metrics use actual
-selected tensors, and clamped-image MSE is only an additional diagnostic.
+## Outputs and resume
 
-A completed reconstruction is committed before image evaluation and reused on
-resume. Changed model/observation/configuration identities or modified saved
-reconstructions reject resume. Interrupted optimizations restart that job, not
-other completed jobs. `--diagnose-only` reads old artifacts without replacing them.
+- `manifest.json`, `workflow_manifest_v3.json`: model/dataset/sample identities.
+- `model_state_v3.pt`: fixed model state, including seeded random initialization.
+- `decomposition.pt`, `decomposition_hash.json`: exact and float32 shares, original
+  and public gradients, coordinate ownership, repair coefficients and metadata.
+- `input_checks_v3.json`: aggregation and all coalition geometry checks.
+- `subsets_v3.json`: every subset and its fixed disguise assignment, saved before
+  attacks. For three servers: 001, 010, 011, 100, 101, 110.
+- `ground_truth.png`, `disguises.png`: selected inputs.
+- Per configuration: `baseline.json` with gate result and completed-subset count.
+- Per reconstruction: config, identity hashes, objective/optimizer trajectory,
+  selected tensor, summary, and comparison PNG. Subset comparison images show
+  **ground truth | reconstruction | marked disguise**.
+- `report.csv` and `report.json`: baseline first, then subset rows per
+  configuration. `workflow_status_v3.json` records overall completion.
 
-Adaptive robust/partial-gradient attacks, trained-model baseline calibration on
-the user's checkpoint, and a successful full coalition comparison remain pending.
-No current result establishes a privacy guarantee.
+Repeat the command to resume. Completed jobs are reused; model state, shares,
+assignments and job input identities are checked. Different model/data/sample
+settings require a new output directory. Execution-code changes create fresh
+attack configurations while retaining the decomposition. Old result folders
+remain intact; historical report rows lack the new assigned-disguise fields.
+
+Existing LeNet5/CIFAR10 output directories retain their selected image (for
+example 193) and public pool. Supply the original checkpoint the first time you
+reuse a historical directory; the model state is then saved for subsequent runs.
+The original manifest and shares are not overwritten.
+
+Optional stage commands:
+
+- `--prepare-only`: prepare shares and mark every subset's disguise; no attacks.
+- `--baseline-only`: run the full-share baseline and stop.
+- `--diagnose-only`: inspect existing decomposition/reconstruction artifacts.
 
 ## Checks
 
 ```bash
-python -m unittest discover -s tests -p test_coalition_disguise.py -v
+python -m unittest discover -s tests -p 'test_coalition*.py' -v
 python -m unittest discover -s tests -v
 ```
 
-Tests include sparse aggregation/rounding, margin algebra, zero/one-extra-nonzero
-cases, unchanged original presets, bounded trial images through LBFGS closures,
-recovery on an identifiable linear fixture, paired original/aggregate controls,
-physical versus sigmoid gradients, calibration gates, old manifest migration,
-resume identity protection, report preservation, and evaluation label consistency.
+The workflow tests execute one successful baseline followed by all six subsets
+on a small identifiable fixture, enforce baseline failure gating, verify that a
+gradient-selected disguise is not replaced by an image-selected one, check seeded
+sampling/model creation and full resume, and verify model adaptation for all
+three model choices with both dataset shapes. Geometry and reconstruction tests
+also cover aggregation, rounding, margins, sparse repair, optimizer diagnostics,
+label consistency and preservation of old artifacts.
+
+The sparse solver's guarantee concerns relative gradient distances. The image
+comparisons above are the empirical test of the proposed disguise behavior.

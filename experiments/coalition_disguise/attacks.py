@@ -66,8 +66,8 @@ def build_attack(name, args):
                             patience=args.patience, minimum_change=args.minimum_change)),
                        function_package('max_iterations', dict(limit=args.max_iterations or preset.max_iterations))],
         best_selection=best_selection_description('attack_loss'))
-    description = run_desc(name='coalition_disguise_' + name, model='lenet5',
-                           data=batch('cifar10', 1, list(range(10))),
+    description = run_desc(name='coalition_disguise_' + name, model=getattr(args, 'model', 'lenet5'),
+                           data=batch(getattr(args, 'dataset', 'cifar10'), 1, list(range(getattr(args, 'class_count', 10)))),
                            gradient_transformations=[], attack=job, attack_name=name,
                            observer=config, experiment_seed=args.seed)
     executable = build_run(description)
@@ -156,7 +156,9 @@ class TraceObserver(observer):
         super().close()
 
 
-def attack(model, observation, label, name, args, destination, *, input_shape=(3, 32, 32), class_count=10):
+def attack(model, observation, label, name, args, destination, *, input_shape=None, class_count=None):
+    input_shape = tuple(input_shape or getattr(args, 'input_shape', (3, 32, 32)))
+    class_count = class_count or getattr(args, 'class_count', 10)
     destination.mkdir(exist_ok=True)
     executable = build_attack(name, args)
     configuration = execution_config(executable, args)

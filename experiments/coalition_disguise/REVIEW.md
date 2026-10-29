@@ -1,4 +1,8 @@
-# Progress and correction review
+# Historical review of the v2 baseline correction
+
+This describes the earlier diagnostic workflow. The current [experiment guide](README.md)
+uses one full-share baseline followed by every nonempty proper subset and
+a fixed gradient-nearest disguise for each subset.
 
 ## Goal and present status
 
