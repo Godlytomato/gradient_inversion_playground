@@ -1,210 +1,137 @@
 # Gradient Inversion Playground
 
-Python tools for gradient reconstruction experiments and a Streamlit results viewer.
-The current implementation uses a **version 2 experimental protocol**. Regenerate
-YAML descriptions and rerun affected experiments; old results do not become
-corrected results when the source changes.
+**Can an AI model reveal a private image from the information it shares while learning?**
 
-## Development
+Gradient Inversion Playground is a Python research toolkit for investigating that question. It recreates *gradient inversion attacks*—attempts to recover training data from model updates—and compares methods intended to reduce what those updates reveal.
 
-The cloud CPU environment was tested with Python 3.12 and PyTorch 2.8.0. Install
-its pinned package snapshot in a virtual environment:
+This project combines machine-learning security research with an experiment runner, configurable attacks and defenses, saved results, and a visual results viewer.
 
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-cpu.txt
-.venv/bin/python -m unittest discover -s tests -v
+> **The short version:** AI models learn by calculating updates called **gradients**. Those updates can contain clues about the data used to produce them. This project tests how much an attacker might recover from those clues, and what happens when the updates are changed before being observed.
+
+## Why this matters
+
+Imagine several organizations collaborating to train an AI model without directly sharing their private images. They may exchange model updates instead of the images themselves. That is useful—but **not automatically private**: some updates can be used to approximate the original training data.
+
+Gradient inversion is one way to study this risk. The practical question is not just *“Can an attack run?”* but *“What information can it actually recover, under which assumptions, and how does a proposed defense change the result?”*
+
+## How the project works
+
+```mermaid
+flowchart LR
+    A["Training image"] --> B["Model computes gradients"]
+    B --> C["Optional privacy transformation"]
+    C --> D["Gradients observed by an attacker"]
+    D --> E["Attempt to reconstruct the image"]
 ```
 
-The regression suite uses synthetic images and temporary databases. It does not
-need CIFAR-10, GPUs, credentials, or access to an experiment database. The CPU
-requirements file is specific to this workflow; CUDA installations require a
-matching PyTorch/torchvision distribution and have not been validated here.
+1. **Choose a setting.** Pick a dataset, neural-network model, reconstruction attack, and optional defense.
+2. **Simulate what an attacker sees.** Compute gradients from an example image and, if selected, alter those gradients.
+3. **Try to recover the image.** Optimize a candidate image so its gradients resemble the observed ones.
+4. **Measure the result.** Compare the reconstructed image with the original using image-quality metrics; keep configuration, diagnostic, and error records.
 
-## Gradient disguise experiment
+The experiment runner separates the *attacker's available information* from *ground-truth information used to evaluate the attack*. This distinction matters when assessing whether an attack really succeeded.
 
-For the seeded model/dataset gradient decomposition experiment, see
-[the experiment guide](experiments/coalition_disguise/README.md) and
-[the baseline failure review](experiments/coalition_disguise/REVIEW.md).
-Select a model and dataset, draw a seeded sample, decompose its gradient, and
-check full-share reconstruction before attacking all proper subsets. Each subset
-is evaluated against its fixed gradient-nearest disguise and the ground truth.
-New runs require the residual toward that disguise to be shorter and have fewer
-nonzero coordinates than the residual toward the true gradient; the original
-share-sparsity construction remains selectable for comparison.
+## What I've built
 
-## Experiments
+| Part | What it does | Why it is useful |
+| --- | --- | --- |
+| **Reconstruction experiments** | Runs gradient inversion methods, including DLG and iDLG presets | Tests whether model updates expose example data |
+| **Defense experiments** | Changes gradients using noise, clipping, pruning, quantization, and research-oriented transformations | Measures how different changes affect reconstruction |
+| **Experiment framework** | Uses Python components and YAML configuration to combine models, datasets, attacks, and defenses | Makes comparisons reproducible and extensible |
+| **Results and visualization** | Saves run metadata, image reconstructions, error reports, and metrics; provides a Streamlit viewer | Makes experiments inspectable rather than relying on a single screenshot |
+| **Multi-server gradient-disguise experiment** | Splits a gradient into shares and studies what different subsets of those shares reveal | Explores a possible direction for reducing leakage when not every server is trusted |
 
-Run commands from the checkout. Dataset loading is lazy: configuration generation
-works offline, while the first real experiment downloads CIFAR-10 into `data/`.
-The dataset source (`www.cs.toronto.edu` and its download redirect) must be allowed
-by the cloud network policy. TLS and torchvision artifact checks remain enabled.
+### Two related research tracks
 
-Generate a selected schedule rather than an expensive complete matrix:
+**1. Attack and defense benchmarking.** Run an attack against ordinary gradients, then compare it with the same attack applied to transformed gradients. The framework supports different models, attacks, metrics, and experimental settings. See the [technical guide](docs/TECHNICAL_GUIDE.md) for the protocol and implementation notes.
 
-```python
-from validation.generator import generate_yamls
+**2. Gradient disguise across multiple servers.** In a separate experimental workflow, multiple gradient shares are constructed to combine into the original update. The experiment tests whether a *subset* of those shares is closer to a chosen public example's gradient than to the private example's gradient—and then tests what reconstruction attacks actually produce. Gradient-space closeness **does not itself establish** that an attack will reconstruct the public example. See the [gradient-disguise experiment](experiments/coalition_disguise/README.md) and its [baseline failure review](experiments/coalition_disguise/REVIEW.md).
 
-generate_yamls(
-    attacks=["dlg"],
-    defenses=["none", "graddefense", "soteria"],
-    models=["lenet5"],
-    datasets=["cifar10"],
+## What a result means
+
+The viewer reports comparisons such as:
+
+- **MSE (mean squared error):** the average squared difference between the reconstructed and original pixels. *Lower* generally means a closer pixel match.
+- **SSIM (structural similarity):** a measure of visual similarity. *Higher* generally means the images have more similar structure.
+- **Attack outcome and diagnostics:** whether an attack met the configured evaluation target, exhausted its budget, stalled, or encountered a numerical/setup error.
+
+**An attack failing to reconstruct an image is not proof that a defense guarantees privacy.** The result depends on the model, dataset, attacker knowledge, optimization settings, and computational budget. The code also contains numerical and theoretical investigations; some proposed lower bounds remain conditional rather than certified guarantees.
+
+## Try it yourself
+
+The following commands are for a **CPU-based Python 3.12 environment**. They have not been independently clean-install tested as part of this documentation change. Execute them from the repository root.
+
+```bash
+git clone https://github.com/Godlytomato/gradient_inversion_playground.git
+cd gradient_inversion_playground
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install the CPU builds of PyTorch and torchvision
+python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.8.0 torchvision==0.23.0
+python -m pip install -r requirements-cpu.txt
+python -m unittest discover -s tests -v
+```
+
+The tests use synthetic inputs and temporary databases; they do **not** require downloading CIFAR-10 or using a GPU.
+
+### Run one example instead of the full experiment matrix
+
+Create one experiment configuration, then run only that configuration:
+
+```bash
+python - <<'PY'
+from pathlib import Path
+from validation.generator import generate_run, save_yaml
+from validation.registries.registry_builder import build_registries
+
+presets = build_registries()
+example = generate_run(
+    presets["attacks"]["dlg"],
+    presets["defenses"]["none"],
+    presets["models"]["lenet5"],
+    presets["datasets"]["cifar10"],
     target=0.02,
 )
+save_yaml(example, Path("demo_schedule"))
+PY
+
+python run.py --schedule demo_schedule --strict-errors
+python -m streamlit run interface.py --browser.gatherUsageStats false
 ```
 
-```bash
-.venv/bin/python run.py --schedule schedual
-.venv/bin/python -m streamlit run interface.py --browser.gatherUsageStats false
-```
+The first real CIFAR-10 run downloads the dataset into `data/`, needs internet access, and can be computationally expensive on CPU. The repository's existing `schedual/` directory contains many other configurations; **do not run that entire directory expecting a quick demo**. The unusual spelling `schedual` is the directory name used by the current code.
 
-The runner initializes/migrates the database non-destructively. Standalone code
-using database writers should first call `database.setup.setup_database()`.
-`python -m database.setup` is also non-destructive. Its explicit `--reset` flag
-deletes the database and results. Do not reset an open/in-use database.
+The runner initializes or migrates its SQLite database without deleting past experiments. **Do not use** `python -m database.setup --reset` unless you intentionally want to delete the existing database and results.
 
-### Stop at the MSE target or when an attack stalls
+## Repository tour
 
-After generating your run YAMLs, apply this explicit MSE-stopping configuration:
+| Location | Start here if you want to… |
+| --- | --- |
+| [`run.py`](run.py) | See how scheduled experiments are executed and errors are recorded |
+| [`validation/`](validation/) | See experiment presets, generation, and configuration checks |
+| [`reconstruction/`](reconstruction/) | Explore reconstruction attacks and optimization |
+| [`transformations/`](transformations/) | Explore gradient defenses and transformations |
+| [`observer/`](observer/) | See how attack behavior and reconstruction quality are measured |
+| [`database/`](database/) and [`interface.py`](interface.py) | Explore saved results and the Streamlit viewer |
+| [`experiments/coalition_disguise/`](experiments/coalition_disguise/) | Explore the multi-server gradient-disguise investigation |
+| [`tests/`](tests/) | Review automated checks |
+| [`docs/`](docs/) | Read numerical analyses, assumptions, limits, and deeper protocol details |
 
-```bash
-.venv/bin/python scripts/set_mse_stopping.py schedual --target 0.02 --patience 200 --minimum-change 0.0001
-```
+### A few terms in plain English
 
-It stops successfully when MSE is at most 0.02 and fails an attempt after 200
-iterations without a cumulative MSE improvement of at least 0.0001. Existing
-restart counts and iteration safety caps are retained. The saved/returned image
-is selected by best MSE so a successful reconstruction is not replaced by an
-earlier image with lower gradient-matching loss. This mode explicitly uses true
-image MSE for stopping and selection.
+**Gradient:** numbers describing how a model should change its parameters as it learns from an example.
 
-The script validates every changed description before writing, backs up the
-original YAMLs as `*.before-mse-stop.bak`, and accepts `--dry-run` to preview.
-It updates generated YAML files, not the Python preset builders: rerun it after
-regenerating a schedule. Stop active experiments before applying new schedules;
-already loaded runs will not change. Stored database results are not modified.
+**Gradient inversion:** an attempt to work backward from those numbers to reconstruct the data that generated them.
 
-## What version 2 measures
+**Defense / transformation:** a modification to the shared gradients intended to reduce information leakage.
 
-- Victim and auxiliary tensors are raw `[0,1]` pixels. Models are randomly
-  initialized and run in evaluation mode; this does not simulate trained victim
-  weights or calibrated batch-normalization statistics.
-- Generated runs use the selected attack preset's iteration cap. Ground truth
-  does not stop the practical attack. The returned practical reconstruction is
-  selected by observed attack loss, while a separate oracle image is selected
-  by true-image MSE for evaluation. Both images and their metrics are saved.
-- Generated target sweeps also forward the target to defenses that explicitly
-  calibrate to `target_error`. Custom YAML can set defense and evaluation targets
-  independently; report both when doing so.
-- The target MSE is assessed after the budget against the practical selection.
-  Oracle recovery is recorded separately. Explicit legacy ground-truth stopping
-  policies remain available, but should be labeled oracle assisted.
-- Batched evaluation uses minimum-cost one-to-one image assignment. Stored raw
-  reconstructions retain attacker order; assignment maps are saved for display.
-  The current iDLG and HF label policies require batch size one and reject larger
-  batches rather than silently inferring unsupported labels.
-- `experiment_seed` controls independent model, sampling, defense, and auxiliary
-  streams. The runner derives and records the attack stream using that seed and
-  the attack's `base_seed`. Configurations sharing the experiment seed/data/model
-  use the same victim model and sampled examples. Use distinct experiment seeds
-  for independent replicates.
-- Auxiliary examples exclude private sample identities, including nested
-  `Subset` indices. An external public dataset can instead be explicitly declared
-  disjoint; the provider refuses to guess sample identities for opaque batches.
-- Configuration hashes have a `v2:` prefix. Historical unprefixed results remain
-  separate. Error/interrupted attempts can be retried as new rows; previous rows,
-  logs, images and diagnostics are preserved. Completed configurations are skipped;
-  change the experiment seed for another independent replicate.
+**Gradient share:** one part of an update distributed across multiple participants; combining all shares recovers the intended update.
 
-See [defense protocol changes](docs/DEFENSE_PROTOCOL.md) for the precise Soteria
-feature-column and GradDefense Frobenius-estimator definitions. They are declared
-adaptations, not verified reproductions of external papers. Historical Soteria
-YAML using a global draft is rejected with regeneration guidance.
+**Reproducible experiment:** a run with recorded configuration and random seeds so that comparisons can be repeated and audited.
 
-See [pre-push validation](docs/PREPUSH_VALIDATION.md) for clean-install,
-real-CIFAR runner and results-viewer checks and their limits.
-See the [batch runner and lower-bound review](docs/RUNNER_READINESS.md) for the
-subsequent continuation fixes, numerical checks and remaining limits.
-The [proof and ResNet audit](docs/LOWER_BOUND_AUDIT.md) checks the supplied
-derivation and explains why its exact-gradient-match and smoothness assumptions
-are not established for the current noisy ReLU ResNet experiments.
-The corrected [residual-aware bound](docs/RESIDUAL_BOUND.md) removes the exact-fit
-requirement and reports conditional results using each saved image's actual
-gradient residual. ReLU smoothness and supplied constants remain uncertified.
-The [SVD/reference scientific-readiness diagnosis](docs/SCIENTIFIC_READINESS.md)
-reproduces the reported ResNet failure and identifies remaining solver,
-direction-consistency, masking and noise-budget issues in those comparisons.
-Minimum-SVD presets now use the [minimum numerically nonnull protocol](docs/MINIMUM_POSITIVE_SVD.md)
-with `solver_method: positive_svd_v1`, `rank_policy: smallest_nonzero`, and a
-relative rank cutoff of `1e-5`. This handles CIFAR LeNet's proven input nullspace
-by selecting its smallest resolved positive mode. Bounded dense QR/SVD covers
-the supplied LeNet case; larger models retain checked iterative estimates and
-explicit numerical limits. Unconfigured schedules adopt this policy before
-hashing; historical results remain separate. To update the YAMLs themselves,
-run `python scripts/set_min_svd_solver.py schedual` after stopping the runner.
-No database reset is needed. The earlier [minimum-SVD solver review](docs/MINIMUM_SVD_SOLVER.md)
-records the original full-minimum diagnosis and convergence repair.
+## Research status and limitations
 
-## Numerical limits and reporting
+This is an **experimental research codebase**, not a deployed privacy service or a demonstrated security guarantee. The standard generated protocol currently evaluates randomly initialized models in evaluation mode; that is **not** the same as benchmarking production-trained models. The multi-server disguise study works with constructed shares and attack simulations, not a live network deployment.
 
-The batch runner continues after individual run errors by default:
-
-```bash
-.venv/bin/python run.py --schedule schedual
-```
-
-Attacks that miss the target or stall remain completed `failure` outcomes.
-Numerical/setup exceptions are saved as `error` attempts, with tracebacks appended
-to `results/run-errors.jsonl`; subsequent YAML files still execute. Restarting the
-same schedule skips completed successes/failures and retries error attempts.
-The process exits normally after finishing the schedule even if individual runs
-errored, so expected numerical failures do not stop a surrounding shell script.
-Use `--strict-errors` to return status 1 after completing a batch with errors,
-`--fail-fast` to stop immediately when debugging, or `--error-log PATH` to change
-the log. Full tracebacks are always stored in that log; `--tracebacks` also prints
-them to the console. Progress messages show when each run completes or the batch
-continues after an error.
-Keyboard interrupts still stop the batch. Database initialization errors stop
-before the batch starts.
-
-Singular directions carry convergence/rank diagnostics. Minimum-positive cases
-within declared dense caps use CPU QR/SVD; larger cases use checked matrix-free
-estimates. Maximum-SVD
-has bounded adaptive defaults; explicit iteration caps are honored. Minimum-SVD
-can reject numerical nullspaces or unconverged solves. Larger budgets may help,
-but the implementation will not replace an unresolved minimum direction with
-normalized maximum-direction leakage. Do not count a rejected experiment as a
-successful defense.
-
-Maximum-SVD YAML files keep their explicit solver limits. For a reference-scaling run,
-`transform.parameters.scaling.parameters.reference_max_iterations` increases the
-reference-direction cap. `svd_max_iterations` increases the spectral-norm cap
-only for `legacy_proof_v1`; the corrected calibration needs no maximum SVD.
-Maximum-SVD ranking and construction use their own
-`max_iterations` parameters. New minimum-SVD presets use `positive_svd_v1`,
-with dense resource limits and `krylov_max_iterations` for larger cases.
-Unconfigured minimum schedules upgrade before hashing; the script linked above
-also rewrites their YAMLs. Raising a cap keeps the residual tolerance unchanged
-and still permits a checked numerical error if the solve does not converge.
-
-Lower-bound calibration uses `directional_residual_v1` and explicitly covers
-raw gradient residuals up to `residual_l2 + residual_fraction * noise_l2`
-(defaults 0 and 0.1). Measured residuals and conditional bounds for the saved
-images appear in the final summary's `experiment_metadata.reconstruction_bounds`.
-Old YAML is upgraded in memory before hashing so historical bound results cannot
-suppress corrected runs; the files and existing database rows are preserved.
-Saved diagnostics include target, budget, residual condition and
-`certified=False`; empirical constants
-and attack failure do **not** prove a guaranteed privacy bound. An `INFEASIBLE`
-warning means the requested target cannot be established under those constants
-and perturbation budget. The attack continues with a bounded best-effort
-perturbation, recorded as `infeasible_best_effort`; this does not certify MSE 0.02.
-The reported ResNet/CIFAR minimum-direction case now converges. Broader case
-replicates, full attack-success sweeps, GPU execution, training utility and
-external paper replication remain separate validation work.
-
-The heatmap aggregates completed attempts within comparable model/data/evaluation
-strata and separates attack budgets. Review sample counts and error/incomplete
-attempts alongside success rates. Image viewers share raw-pixel display conversion
-instead of silently rescaling each reconstruction's contrast.
+For scientific assumptions, numerical convergence limits, and the difference between empirical evidence and certified claims, see the [technical guide](docs/TECHNICAL_GUIDE.md), [scientific-readiness analysis](docs/SCIENTIFIC_READINESS.md), and [residual-bound discussion](docs/RESIDUAL_BOUND.md).
