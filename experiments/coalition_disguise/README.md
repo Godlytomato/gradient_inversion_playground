@@ -1,5 +1,17 @@
 # Seeded gradient decomposition experiment
 
+## What is this testing? (Plain-language summary)
+
+In collaborative machine learning, different servers may see only **part** of a model update. This experiment asks whether those partial views can be deliberately made **less informative about a private training image**.
+
+It constructs multiple pieces (or *shares*) of one gradient so that the complete collection reconstructs the original update. For every smaller combination of shares, it checks whether the observed update is closer—in gradient space—to a selected public example than to the private one. It then actually runs reconstruction attacks to see whether that numerical property changes what an attacker recovers.
+
+**Important:** Being closer to a public gradient does not prove an attacker will reconstruct the public image, and observed attack failures do not guarantee privacy. This is a research simulation, not a deployed multi-server communication system.
+
+For a broader introduction, [start at the main project README](../../README.md). Technical procedure and parameters follow.
+
+## Technical workflow
+
 The workflow is:
 
 1. Select a model and dataset.
