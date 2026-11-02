@@ -35,6 +35,7 @@ defense_backups/
 log.txt
 target_changes.diff
 .vscode/
+work/
 checkpoint/
 *.db
 results/

@@ -9,11 +9,13 @@ HASH_VERSION = "v2"
 
 def normalize_config(config):
     if is_dataclass(config) and not isinstance(config, type):
-        return {field.name: normalize_config(getattr(config, field.name)) for field in fields(config)}
+        return normalize_config({field.name: getattr(config, field.name) for field in fields(config)})
     if isinstance(config, Mapping):
         if not all(isinstance(key, str) for key in config):
             raise TypeError("Configuration mapping keys must be strings")
-        return {key: normalize_config(value) for key, value in config.items()}
+        # Adding an unused optional evaluator must not invalidate existing runs.
+        return {key: normalize_config(value) for key, value in config.items()
+                if key != "evaluation_target_clip_confidence" or value is not None}
     if isinstance(config, (list, tuple)):
         return [normalize_config(value) for value in config]
     if config is None or isinstance(config, (str, int, float, bool)):

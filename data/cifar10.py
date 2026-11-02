@@ -15,6 +15,8 @@ CIFAR10_DATA = dataset_def(
     input_dimensions=(32, 32),
     input_space="raw_pixels",
     split="test",
+    class_names=("airplane", "automobile", "bird", "cat", "deer",
+                 "dog", "frog", "horse", "ship", "truck"),
     mean=(
         0.4914,
         0.4822,

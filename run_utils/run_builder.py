@@ -207,6 +207,7 @@ def resolve_observer(description):
         oracle_selection=config.oracle_selection,
         batch_matching=config.batch_matching,
         evaluation_target_mse=config.evaluation_target_mse,
+        evaluation_target_clip_confidence=config.evaluation_target_clip_confidence,
     ), requirements
 
 def build_run(description: run_desc) -> run:
@@ -274,12 +275,21 @@ def validate_observer(config):
     if target is not None:
         if not math.isfinite(target) or target < 0 or "mse" not in metrics:
             raise ValueError("evaluation_target_mse requires a finite nonnegative target and mse metric")
+    clip_target = config.evaluation_target_clip_confidence
+    if clip_target is not None:
+        if (isinstance(clip_target, bool) or not isinstance(clip_target, (int, float))
+                or not math.isfinite(clip_target) or not 0 < clip_target <= 1
+                or "clip_confidence" not in metrics):
+            raise ValueError("evaluation_target_clip_confidence requires a target in (0, 1] and clip_confidence metric")
+        if target is not None:
+            raise ValueError("Choose one final evaluation target: MSE or CLIP confidence")
 
     # Policies must have the data they actually evaluate.
     for policy in config.success_policies + config.fail_policies:
 
         dependency = {
             "target_mse": "mse", "target_psnr": "psnr", "target_ssim": "ssim",
+            "target_clip_confidence": "clip_confidence",
         }.get(policy.name)
         if policy.name == "no_improvement":
             dependency = policy.parameters.get("metric", "mse")
@@ -298,8 +308,12 @@ def validate_observer(config):
                 raise ValueError("minimum_change must be finite and nonnegative")
         if policy.name.startswith("target_"):
             threshold = policy.parameters.get("threshold")
-            if threshold is None or not math.isfinite(threshold):
+            if not isinstance(threshold, (int, float)) or not math.isfinite(threshold):
                 raise ValueError(f"{policy.name} requires a finite threshold")
+            if policy.name == "target_clip_confidence" and (
+                isinstance(threshold, bool) or not 0 < threshold <= 1
+            ):
+                raise ValueError("target_clip_confidence threshold must be in (0, 1]")
 
     # logging can only request configured metrics
     if config.logging is not None:

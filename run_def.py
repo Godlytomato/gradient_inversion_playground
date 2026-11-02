@@ -94,6 +94,7 @@ class observer_description:
     oracle_selection: best_selection_description | None = None
     batch_matching: str = "assignment"
     evaluation_target_mse: float | None = None
+    evaluation_target_clip_confidence: float | None = None
 
 
 # complete user-facing run description
@@ -144,6 +145,7 @@ class resolved_observer:
     oracle_selection: best_selection_description | None = None
     batch_matching: str = "assignment"
     evaluation_target_mse: float | None = None
+    evaluation_target_clip_confidence: float | None = None
 
 
 # runtime information requirements

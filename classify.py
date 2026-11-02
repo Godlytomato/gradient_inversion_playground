@@ -2,14 +2,15 @@ import io
 import sqlite3
 from pathlib import Path
 
-import clip
 import torch
 from torchvision.datasets import CIFAR10
-from torchvision.transforms import ToTensor, ToPILImage
+from torchvision.transforms import ToTensor
+
+from data.cifar10 import CIFAR10_DATA
+from observer.metrics.implementations.clip_confidence import load_classifier
 
 DB_PATH = Path('database/playground.db')
-CLASSES = ('airplane', 'automobile', 'bird', 'cat', 'deer',
-           'dog', 'frog', 'horse', 'ship', 'truck')
+CLASSES = CIFAR10_DATA.class_names
 
 
 def load_tensor(blob):
@@ -35,12 +36,7 @@ def main():
         ground_truth_labels[key] = label
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model, preprocess = clip.load('ViT-B/32', device=device, jit=False)
-    model.eval()
-    prompts = [f'a photo of a {name}' for name in CLASSES]
-    with torch.inference_mode():
-        text_features = model.encode_text(clip.tokenize(prompts).to(device))
-        text_features = text_features / text_features.norm(dim=-1, keepdim=True)
+    classifier = load_classifier('ViT-B/32', device, 'checkpoint/clip')
 
     with sqlite3.connect(DB_PATH) as db:
         backup = DB_PATH.with_suffix('.before_classification.db')
@@ -64,7 +60,6 @@ def main():
             JOIN images AS g ON g.run_id = r.id AND g.image_type = 'ground_truth'
             WHERE r.dataset = 'cifar10' AND r.best_image_classified IS NULL
         ''').fetchall()
-        converted = ToPILImage()
         completed = 0
         for run_id, batch_size, best_blob, gt_blob in rows:
             if batch_size != 1:
@@ -82,14 +77,9 @@ def main():
                 print(f'Skipping {run_id}: original not found in CIFAR-10 test set')
                 continue
 
-            x = preprocess(converted(best[0].clamp(0, 1).float())).unsqueeze(0).to(device)
-            with torch.inference_mode():
-                image_features = model.encode_image(x)
-                image_features = image_features / image_features.norm(dim=-1, keepdim=True)
-                scores = 100.0 * image_features @ text_features.T
-                probabilities = scores.float().softmax(dim=-1)[0]
-                predicted = int(probabilities.argmax().item())
-                confidence = float(probabilities[predicted].item())
+            probabilities = classifier.probabilities(best, CLASSES, 'a photo of a {label}', 1.0)[0]
+            predicted = int(probabilities.argmax().item())
+            confidence = float(probabilities[predicted].item())
             correct = int(predicted == label)
             db.execute('''
                 UPDATE runs

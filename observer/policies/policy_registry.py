@@ -18,9 +18,15 @@ from observer.policies.implementations.target_ssim import (
 from observer.policies.implementations.no_improvement import (
     no_improvement,
 )
+from observer.policies.implementations.target_clip_confidence import target_clip_confidence
 
 
 policy_registry = {
+    "target_clip_confidence": policy_def(
+        name="target_clip_confidence",
+        function=target_clip_confidence,
+        requires={"labels"},
+    ),
 
     "max_iterations": policy_def(
         name="max_iterations",
