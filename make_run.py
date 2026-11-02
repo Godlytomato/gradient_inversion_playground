@@ -1,4 +1,4 @@
-"""Generate one bounded CLIP-confidence demo; add --run to execute it."""
+"""Generate one DLG/LeNet reconstruction with a 0.90 CLIP target."""
 import argparse
 from pathlib import Path
 
@@ -8,18 +8,23 @@ from validation.registries.registry_builder import build_registries
 from validation.validator import validate_run
 
 
-def demo_description(*, iterations=20, threshold=0.90, temperature=1.0, model_name="ViT-B/32"):
+def demo_description(*, iterations=1000, threshold=0.90, temperature=1.0, model_name="ViT-B/32"):
     presets = build_registries()
     description = generate_run(
-        presets["attacks"]["idlg"], presets["defenses"]["none"],
+        presets["attacks"]["dlg"], presets["defenses"]["none"],
         presets["models"]["lenet5"], presets["datasets"]["cifar10"], target=0.02,
     )
     description.name = "clip_confidence_demo"
-    description.attack.restarts = 1
-    description.attack.optimizer_description.parameters["max_iter"] = 3
-    description.attack.post_update_mods = [
-        function_package("clamp", {"minimum": 0.0, "maximum": 1.0}),
-    ]
+    # DLG still jointly optimizes pixels and unknown labels. Smooth random
+    # pixels avoid retaining high-frequency initialization noise in LeNet's
+    # weakly observed directions; no private image is used for initialization.
+    description.attack.initialization_policy = "smooth_uniform"
+    description.attack.optimizer_description.parameters.update(
+        tolerance_grad=1e-12, tolerance_change=1e-15,
+    )
+    # A positive constant preserves the squared gradient-matching objective's
+    # minimizers while keeping its tiny gradients useful to LBFGS.
+    description.attack.loss_mods = [function_package("scale", {"scale": 1e6})]
     config = description.observer
     config.metrics.append(function_package("clip_confidence", {
         "model_name": model_name, "temperature": temperature,
@@ -38,7 +43,8 @@ def demo_description(*, iterations=20, threshold=0.90, temperature=1.0, model_na
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=Path("demo_schedule/clip_confidence"))
-    parser.add_argument("--iterations", type=int, default=20)
+    parser.add_argument("--iterations", type=int, default=1000,
+                        help="Safety cap; stop earlier when correct-label CLIP confidence reaches the target")
     parser.add_argument("--threshold", type=float, default=0.90)
     parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--clip-model", default="ViT-B/32", help="OpenAI CLIP model name or local checkpoint path")

@@ -18,7 +18,7 @@ from data.dataset_def import dataset_def
 from make_run import demo_description, main as make_demo
 from observer.observer import observer
 from observer.policies.implementations.target_clip_confidence import target_clip_confidence
-from run_def import function_package
+from run_def import best_selection_description, function_package
 from run_utils.reader import read_run
 from run_utils.run_builder import build_run
 
@@ -234,6 +234,30 @@ class ClipObserverTests(unittest.TestCase):
                 self.assertIsNone(summary["evaluation"]["target_mse"])
                 recorded = json.loads(db.execute("SELECT metrics FROM logs").fetchone()[0])
                 self.assertGreaterEqual(recorded["clip_confidence"], .9)
+
+    def test_default_dlg_profile_recovers_pixels_before_safety_cap(self):
+        """Check actual gradient inversion, independently of CLIP availability."""
+        import run as runner
+        from data.dataset_registry import dataset_dict
+
+        axis = torch.linspace(0, 1, 32)
+        y, x = torch.meshgrid(axis, axis, indexing="ij")
+        images = torch.stack([x, y, (x + y) / 2]).unsqueeze(0)
+        fixture = dataset_def("cifar10", lambda: TensorDataset(images, torch.tensor([0])),
+                              10, 3, (32, 32))
+        description = demo_description(iterations=100)
+        config = description.observer
+        config.logging = None
+        config.metrics = [item for item in config.metrics if item.name != "clip_confidence"]
+        # Pixel quality verifies reconstruction here; the shipped demo retains
+        # its CLIP-only success policy and requires a real CLIP checkpoint.
+        config.success_policies = [function_package("target_mse", {"threshold": .001})]
+        config.best_selection = best_selection_description("attack_loss", "minimize")
+        config.evaluation_target_clip_confidence = None
+        config.evaluation_target_mse = .001
+        with patch.dict(dataset_dict, {"cifar10": fixture}):
+            reconstruction = runner.execute_description(description, skip_existing=False)
+        self.assertLessEqual(float(((reconstruction - images) ** 2).mean()), .001)
 
 
 if __name__ == "__main__":

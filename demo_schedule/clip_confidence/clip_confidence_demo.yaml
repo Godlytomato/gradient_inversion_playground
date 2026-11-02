@@ -17,29 +17,30 @@ data:
 gradient_transformations: []
 attack:
   attack_type: optimization
-  initialization_policy: random
-  label_policy: idlg
+  initialization_policy: smooth_uniform
+  label_policy: unknown
   restarts: 1
   optimizer_description:
     name: lbfgs
     parameters:
       lr: 1.0
-      max_iter: 3
+      max_iter: 20
+      tolerance_grad: 1.0e-12
+      tolerance_change: 1.0e-15
   loss: l2
   missingness_policy: visible_only
   preprocessing_gradients_policy: none
-  loss_mods: []
-  regularizers: []
-  post_update_mods:
-  - name: clamp
+  loss_mods:
+  - name: scale
     parameters:
-      minimum: 0.0
-      maximum: 1.0
+      scale: 1000000.0
+  regularizers: []
+  post_update_mods: []
   pre_update_mods: []
   scheduler: null
   gan_description: null
   base_seed: 0
-attack_name: idlg
+attack_name: dlg
 defense_name: none
 observer:
   success_policies:
@@ -49,7 +50,7 @@ observer:
   fail_policies:
   - name: max_iterations
     parameters:
-      limit: 20
+      limit: 1000
   metrics:
   - name: mse
     parameters: {}
