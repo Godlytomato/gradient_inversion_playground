@@ -37,6 +37,7 @@ class observer:
     current_assignment: list[int] | None = None
     best_assignment: list[int] | None = None
     oracle_best_assignment: list[int] | None = None
+    information: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
         self.logger = None
@@ -58,7 +59,9 @@ class observer:
             reconstruction, self.ground_truth, getattr(self.config, "batch_matching", "assignment")
         )
         for metric in self.config.metrics:
-            value = metric.function(evaluated, self.ground_truth, **metric.parameters)
+            arguments = {name: self.information[name]
+                         for name in metric.requires - {"ground_truth"}}
+            value = metric.function(evaluated, self.ground_truth, **arguments, **metric.parameters)
             self.current_metrics[metric.name or metric.function.__name__] = value
         if metrics is not None:
             self.current_metrics.update(metrics)
@@ -132,8 +135,14 @@ class observer:
         for name, metrics in (("practical", self.best_metrics), ("oracle", self.oracle_best_metrics)):
             value = metrics.get("mse")
             evaluation[name + "_success"] = None if target is None or value is None else bool(value <= target)
+        clip_target = getattr(self.config, "evaluation_target_clip_confidence", None)
+        if clip_target is not None:
+            evaluation.update(success_metric="clip_confidence", target_clip_confidence=clip_target)
+            for name, metrics in (("practical", self.best_metrics), ("oracle", self.oracle_best_metrics)):
+                value = metrics.get("clip_confidence")
+                evaluation[name + "_success"] = None if value is None else bool(value >= clip_target)
         final_outcome = self.outcome
-        if target is not None and final_outcome != "error" and evaluation["practical_success"] is not None:
+        if (target is not None or clip_target is not None) and final_outcome != "error" and evaluation["practical_success"] is not None:
             final_outcome = "success" if evaluation["practical_success"] else "failure"
         selection = lambda value: None if value is None else {"metric": value.metric, "direction": value.direction}
         return {

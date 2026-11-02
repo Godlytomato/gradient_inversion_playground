@@ -1,0 +1,82 @@
+name: clip_confidence_demo
+model: lenet5
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations: []
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: idlg
+  restarts: 1
+  optimizer_description:
+    name: lbfgs
+    parameters:
+      lr: 1.0
+      max_iter: 3
+  loss: l2
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers: []
+  post_update_mods:
+  - name: clamp
+    parameters:
+      minimum: 0.0
+      maximum: 1.0
+  pre_update_mods: []
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: idlg
+defense_name: none
+observer:
+  success_policies:
+  - name: target_clip_confidence
+    parameters:
+      threshold: 0.9
+  fail_policies:
+  - name: max_iterations
+    parameters:
+      limit: 20
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  - name: clip_confidence
+    parameters:
+      model_name: ViT-B/32
+      temperature: 1.0
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+    - clip_confidence
+  best_selection:
+    metric: clip_confidence
+    direction: maximize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: null
+  evaluation_target_clip_confidence: 0.9
+experiment_seed: 0
+protocol_version: 2

@@ -103,7 +103,8 @@ def handle_run(
             config=executable_run.observer,
             run_id=run_id,
             description=executable_run.description,
-            ground_truth=observer_information.get("ground_truth")
+            ground_truth=observer_information.get("ground_truth"),
+            information=observer_information,
         )
         active_observer.set_run_metrics(context.transformation_metrics)
         active_observer.experiment_metadata = context.experiment_metadata

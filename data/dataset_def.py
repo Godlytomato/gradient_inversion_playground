@@ -48,6 +48,7 @@ class dataset_def:
     std: tuple[float, ...] | None = None
     input_space: str = "raw_pixels"
     split: str | None = None
+    class_names: tuple[str, ...] | None = None
 
     _data: Dataset | None = field(init=False, default=None, repr=False)
 

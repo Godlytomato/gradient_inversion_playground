@@ -75,6 +75,58 @@ python -m unittest discover -s tests -v
 
 The tests use synthetic inputs and temporary databases; they do **not** require downloading CIFAR-10 or using a GPU.
 
+### CLIP-confidence demo
+
+`make_run.py` now generates one small iDLG / LeNet-5 / CIFAR-10 experiment with
+no defense, one restart, and a cap of 20 outer iterations (three LBFGS iterations
+per update). Its success policy requires the correct label with CLIP confidence
+at least **0.90**.
+
+```bash
+source .venv/bin/activate
+python -m pip install -r requirements-clip.txt
+make run
+```
+
+`make run` generates the configuration in `demo_schedule/clip_confidence/` and
+executes only that directory. To generate it without running, or adjust the budget:
+
+```bash
+python make_run.py
+python make_run.py --iterations 100 --threshold 0.90 --run
+```
+
+The first run downloads OpenAI CLIP's `ViT-B/32` weights to `checkpoint/clip/`
+(from `openaipublic.azureedge.net`) and CIFAR-10 if needed. Restricted environments
+need those download hosts enabled, or an existing local checkpoint passed with
+`--clip-model /path/to/ViT-B-32.pt`. This short demo tests the evaluation pipeline;
+it may finish below the success threshold. Results and the per-step
+`clip_confidence` metric are saved to the existing SQLite database.
+
+For one image, `clip_confidence` is its top-1 CLIP softmax score when the predicted
+label equals the original's ground-truth label; it is **zero for an incorrect
+label**, even if that prediction is confident. For batches, images follow the
+observer's configured matching rule; every label must be correct and the metric
+is the **lowest** confidence in the batch. All dataset classes remain candidates,
+including when sampling just one class. CIFAR-10 class names are in label-index
+order. Other datasets can supply `data_def.class_names` or the metric's
+`class_names` parameter, with one name per class.
+
+The metric uses the checkpoint's learned logit scale and the prompt
+`a photo of a {label}`. Its `temperature` parameter defaults to 1.0; set
+`--temperature` only from a separately fitted calibration temperature if a
+calibrated probability interpretation is needed. A raw score of 0.90 measures
+CLIP confidence and semantic recovery, rather than guaranteeing 90% correctness
+or recovery of the specific original image.
+
+The demo selects the saved reconstruction by maximum `clip_confidence` and sets
+`evaluation_target_clip_confidence: 0.90`, with `evaluation_target_mse: null`, so
+MSE cannot override its final outcome. Labels are provided to the evaluator;
+iDLG infers its attack label from gradients. This is evaluator-assisted stopping
+and image selection. For fixed-budget benchmarking, keep `attack_loss` selection,
+omit the success policy, and use the CLIP evaluation target after the budget.
+The general matrix generator in `validation/generator.py` retains its defaults.
+
 ### Run one example instead of the full experiment matrix
 
 Create one experiment configuration, then run only that configuration:
