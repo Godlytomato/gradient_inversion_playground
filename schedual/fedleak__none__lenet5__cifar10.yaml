@@ -48,16 +48,8 @@ attack:
 attack_name: fedleak
 defense_name: none
 observer:
-  success_policies:
-  - name: target_mse
-    parameters:
-      threshold: 0.02
+  success_policies: []
   fail_policies:
-  - name: no_improvement
-    parameters:
-      metric: mse
-      patience: 200
-      minimum_change: 0.0001
   - name: max_iterations
     parameters:
       limit: 1000
@@ -76,7 +68,7 @@ observer:
     - ssim
     - attack_loss
   best_selection:
-    metric: mse
+    metric: attack_loss
     direction: minimize
   oracle_selection:
     metric: mse
