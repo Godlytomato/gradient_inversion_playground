@@ -77,10 +77,14 @@ The tests use synthetic inputs and temporary databases; they do **not** require 
 
 ### CLIP-confidence demo
 
-`make_run.py` now generates one small iDLG / LeNet-5 / CIFAR-10 experiment with
-no defense, one restart, and a cap of 20 outer iterations (three LBFGS iterations
-per update). Its success policy requires the correct label with CLIP confidence
-at least **0.90**.
+`make_run.py` generates one single-image DLG / LeNet-5 / CIFAR-10 experiment with
+no defense and one restart. DLG jointly optimizes unknown labels and pixels,
+with full LBFGS updates (20 internal iterations) and no extra pixel clamp.
+The demo starts from smooth random pixels, scales the squared gradient-matching
+loss by a positive constant, and uses tighter optimizer tolerances to avoid
+stalling on small gradients. Initialization uses no private images. It stops
+as soon as the reconstructed image has the correct label with
+CLIP confidence at least **0.90**, with a safety cap of 1,000 outer iterations.
 
 ```bash
 source .venv/bin/activate
@@ -93,15 +97,17 @@ executes only that directory. To generate it without running, or adjust the budg
 
 ```bash
 python make_run.py
-python make_run.py --iterations 100 --threshold 0.90 --run
+python make_run.py --iterations 2000 --threshold 0.90 --run
 ```
 
 The first run downloads OpenAI CLIP's `ViT-B/32` weights to `checkpoint/clip/`
 (from `openaipublic.azureedge.net`) and CIFAR-10 if needed. Restricted environments
 need those download hosts enabled, or an existing local checkpoint passed with
-`--clip-model /path/to/ViT-B-32.pt`. This short demo tests the evaluation pipeline;
-it may finish below the success threshold. Results and the per-step
-`clip_confidence` metric are saved to the existing SQLite database.
+`--clip-model /path/to/ViT-B-32.pt`. Results and the per-step `clip_confidence`
+metric are saved to the existing SQLite database. A completed run stops with
+`target_clip_confidence` when the target is reached, or `max_iterations` when its
+budget is exhausted. Pixel convergence alone does not ensure a 0.90 CLIP score;
+the classifier may also assign the original image a lower confidence.
 
 For one image, `clip_confidence` is its top-1 CLIP softmax score when the predicted
 label equals the original's ground-truth label; it is **zero for an incorrect
@@ -122,8 +128,8 @@ or recovery of the specific original image.
 The demo selects the saved reconstruction by maximum `clip_confidence` and sets
 `evaluation_target_clip_confidence: 0.90`, with `evaluation_target_mse: null`, so
 MSE cannot override its final outcome. Labels are provided to the evaluator;
-iDLG infers its attack label from gradients. This is evaluator-assisted stopping
-and image selection. For fixed-budget benchmarking, keep `attack_loss` selection,
+DLG optimizes its attack label alongside the reconstructed pixels. This is
+evaluator-assisted stopping and image selection. For fixed-budget benchmarking, keep `attack_loss` selection,
 omit the success policy, and use the CLIP evaluation target after the budget.
 The general matrix generator in `validation/generator.py` retains its defaults.
 
