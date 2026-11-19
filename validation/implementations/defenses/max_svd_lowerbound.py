@@ -14,6 +14,7 @@ def max_svd_lower_bound(
     bound_method: str = DEFAULT_BOUND_METHOD,
     residual_l2: float = 0.0,
     residual_fraction: float = 0.1,
+    softplus_beta: float | None = None,
 ) -> list[grad_transform]:
 
     if not 0.0 <= percent <= 1.0:
@@ -30,6 +31,9 @@ def max_svd_lower_bound(
         target_error=target_error, mu_j=mu_j, bound_method=bound_method,
         residual_l2=residual_l2, residual_fraction=residual_fraction,
     )
+    if softplus_beta is not None:
+        calibration_parameters.pop("mu_j")
+        calibration_parameters.update(mu_j_method="empirical", softplus_beta=softplus_beta)
 
     if iterations is not None and iterations <= 0:
         raise ValueError(

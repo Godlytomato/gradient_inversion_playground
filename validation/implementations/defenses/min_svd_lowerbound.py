@@ -26,6 +26,7 @@ def min_svd_lower_bound(
     relative_rank_tolerance: float | None = None,
     dense_max_elements: int | None = None,
     dense_max_input_size: int | None = None,
+    softplus_beta: float | None = None,
 ) -> list[grad_transform]:
 
     if not 0.0 <= percent <= 1.0:
@@ -42,6 +43,9 @@ def min_svd_lower_bound(
         target_error=target_error, mu_j=mu_j, bound_method=bound_method,
         residual_l2=residual_l2, residual_fraction=residual_fraction,
     )
+    if softplus_beta is not None:
+        calibration_parameters.pop("mu_j")
+        calibration_parameters.update(mu_j_method="empirical", softplus_beta=softplus_beta)
 
     solver_parameters = min_svd_parameters(
         iterations=iterations, solve_iterations=solve_iterations, damping=damping,

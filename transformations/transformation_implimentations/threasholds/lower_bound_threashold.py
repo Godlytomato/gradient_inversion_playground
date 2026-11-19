@@ -12,6 +12,7 @@ previous exact-fit formula is available only as ``legacy_proof_v1``.
 
 import math
 import warnings
+from dataclasses import replace
 
 import torch
 
@@ -23,6 +24,13 @@ from transformations.ranking_implimentations.transform_utils import (
     record_numerical_diagnostic,
 )
 from transformations.ranking_implimentations.jacobian_variation import estimate_mu_j
+from transformations.transformation_implimentations.threasholds.smooth_model import softplus_copy
+
+
+def _mu_context(context, beta):
+    if beta is None:
+        return context
+    return replace(context, model=softplus_copy(context.model, beta=beta))
 
 
 def _legacy_lower_bound_threshold(
@@ -46,6 +54,7 @@ def _legacy_lower_bound_threshold(
     svd_iterations: int | None = None,
     svd_tolerance: float = 1e-4,
     svd_max_iterations: int | None = None,
+    softplus_beta: float | None = None,
 ) -> list[torch.Tensor]:
     """Return a masked blur of minimal sufficient norm, or a bounded best effort.
 
@@ -132,17 +141,18 @@ def _legacy_lower_bound_threshold(
         raise ValueError("target MSE converted to nonfinite L2 error")
 
     if mu_j_method == "empirical":
+        mu_context = _mu_context(context, softplus_beta)
         if mu_j_debug:
             print("=== MU_J RADIUS DIAGNOSTICS ===")
             for radius in (1e-4, 1e-3, 1e-2, 1e-1):
                 estimate = estimate_mu_j(
-                    context, radii=(radius,), points=mu_j_points,
+                    mu_context, radii=(radius,), points=mu_j_points,
                     directions=mu_j_directions,
                     safety_factor=mu_j_safety_factor, seed=mu_j_seed,
                 )
                 print(f"radius={radius:.0e}, mu_j={float(estimate):.8g}")
         mu = float(numerical_stage("estimating_jacobian_variation", lambda: estimate_mu_j(
-            context, radii=mu_j_radii, points=mu_j_points,
+            mu_context, radii=mu_j_radii, points=mu_j_points,
             directions=mu_j_directions,
             safety_factor=mu_j_safety_factor, seed=mu_j_seed,
         )))
@@ -266,7 +276,7 @@ def lower_bound_threshold(
     max_scale=1000.0, refine_iterations=40, svd_iterations=None,
     svd_tolerance=1e-4, svd_max_iterations=None,
     bound_method="directional_residual_v1", residual_l2=0.0,
-    residual_fraction=0.1,
+    residual_fraction=0.1, softplus_beta=None,
 ):
     """Conditional calibration allowing a nonzero raw gradient residual.
 
@@ -287,7 +297,7 @@ def lower_bound_threshold(
             mu_j, mu_j_method, mu_j_radii, mu_j_points, mu_j_directions,
             mu_j_safety_factor, mu_j_seed, mu_j_debug, initial_scale,
             growth_factor, max_scale, refine_iterations, svd_iterations,
-            svd_tolerance, svd_max_iterations,
+            svd_tolerance, svd_max_iterations, softplus_beta,
         )
     if bound_method != "directional_residual_v1":
         raise ValueError(f"Unknown lower-bound method: {bound_method}")
@@ -360,8 +370,9 @@ def lower_bound_threshold(
             raise ValueError("manual mu_j_method requires mu_j")
         mu = float(mu_j)
     elif mu_j_method == "empirical":
+        mu_context = _mu_context(context, softplus_beta)
         mu = float(stage("estimating_jacobian_variation", lambda: estimate_mu_j(
-            context, radii=mu_j_radii, points=mu_j_points, directions=mu_j_directions,
+            mu_context, radii=mu_j_radii, points=mu_j_points, directions=mu_j_directions,
             safety_factor=mu_j_safety_factor, seed=mu_j_seed,
         )))
     else:
