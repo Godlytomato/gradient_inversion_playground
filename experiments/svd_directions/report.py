@@ -14,24 +14,24 @@ def main():
             SELECT r.id, r.name, r.attack_name, r.raw_description,
                    r.run_metrics, MIN(CAST(json_extract(l.metrics, '$.mse') AS REAL))
             FROM runs r JOIN logs l ON l.run_id = r.id
-            WHERE r.name LIKE 'svd_direction_v1__%'
+            WHERE r.name GLOB 'svd_extremes_v1__*'
               AND r.outcome IN ('success', 'failure')
             GROUP BY r.id ORDER BY r.name
         ''').fetchall()
     fields = ['run_id', 'name', 'attack', 'direction', 'percent', 'configured_delta_l2', 'actual_delta_l2', 'best_mse', 'defense_success']
     groups = defaultdict(list)
     count = 0
-    with Path('svd_direction_results.csv').open('w', newline='') as f:
+    with Path('svd_extremes_results.csv').open('w', newline='') as f:
         w = csv.writer(f)
         w.writerow(fields)
         for run_id, name, attack, raw, metrics, mse in rows:
             if mse is None:
                 continue
             config = json.loads(raw)
-            if config.get('defense_name') != 'indexed_svd_noise':
+            if config.get('defense_name') not in {'min_svd_noise', 'max_svd_noise'}:
                 continue
             t = config['gradient_transformations'][0]['transform']['parameters']
-            direction = t['construction']['parameters']['direction']
+            direction = t['construction']['name'].removesuffix('_svd_alignment')
             scale = t['scaling']['parameters']['scale']
             percent = int(name.split('__')[-2][1:])
             delta = json.loads(metrics or '{}').get('delta_l2')
@@ -45,7 +45,7 @@ def main():
     print('mode  direction  percent  mean best MSE  blocked/total')
     for (mode, direction, percent), values in sorted(groups.items()):
         print(f'{mode:5} {direction:9} {percent:8} {sum(v[0] for v in values)/len(values):14.7g} {sum(v[1] for v in values):3}/{len(values)}')
-    print(f'Saved {count} rows to svd_direction_results.csv')
+    print(f'Saved {count} rows to svd_extremes_results.csv')
 
 
 if __name__ == '__main__':

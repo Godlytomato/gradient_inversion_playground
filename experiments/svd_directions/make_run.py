@@ -4,7 +4,6 @@ import copy
 import csv
 import json
 import math
-import random
 import sqlite3
 from dataclasses import asdict
 from pathlib import Path
@@ -12,13 +11,14 @@ from pathlib import Path
 import yaml
 
 from database.connection import DB_PATH
-from validation.implementations.defenses.indexed_svd_noise import indexed_svd_noise
+from run_def import function_package
+from validation.implementations.defenses.max_svd_noise import max_svd_noise
+from validation.implementations.defenses.min_svd_noise import min_svd_noise
 
 ATTACKS = ('beyond_gradients', 'gi_pip', 'hf_gradinv')
 MODEL = 'resnet18'
-RUN_TAG = 'svd_direction_v1'
-INPUT_DIM = 3 * 32 * 32
-DIRECTIONS = [1, *sorted(random.Random(42).sample(range(2, INPUT_DIM), 5)), -1]
+RUN_TAG = 'svd_extremes_v1'
+DIRECTIONS = ('max', 'min')
 PERCENTAGES = range(10, 101, 10)
 
 
@@ -52,7 +52,7 @@ def load_references():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output', type=Path, default=Path('schedule'))
+    parser.add_argument('--output', type=Path, default=Path('schedule_svd_extremes'))
     parser.add_argument('--keep-early-stop', action='store_true',
                         help='retain the original observer stopping policies')
     args = parser.parse_args()
@@ -66,13 +66,20 @@ def main():
             for percent in PERCENTAGES:
                 scale = delta * percent / 100
                 config = copy.deepcopy(original)
-                rank = 'min' if direction == -1 else str(direction)
                 mode = 'early' if args.keep_early_stop else 'fixed'
-                config['name'] = f'{RUN_TAG}__{attack}__{MODEL}__r{run_id}__dir{rank}__p{percent:03d}__{mode}'
+                config['name'] = f'{RUN_TAG}__{attack}__{MODEL}__r{run_id}__dir{direction}__p{percent:03d}__{mode}'
                 config['attack_name'] = attack
-                config['defense_name'] = 'indexed_svd_noise'
+                config['defense_name'] = f'{direction}_svd_noise'
                 config['attack']['base_seed'] = 0
-                config['gradient_transformations'] = [asdict(t) for t in indexed_svd_noise(direction, scale)]
+                if direction == 'max':
+                    transforms = max_svd_noise(percent=1.0, scale=scale)
+                else:
+                    transforms = min_svd_noise(percent=1.0, scale=scale,
+                                               solver_method='positive_svd_v1',
+                                               dense_max_elements=0, dense_max_input_size=0)
+                # All coordinates are selected, so ranking would repeat the SVD solve.
+                transforms[0].ranking_policy = function_package(name='in_place')
+                config['gradient_transformations'] = [asdict(t) for t in transforms]
                 observer = config['observer']
                 if not args.keep_early_stop:
                     observer['success_policies'] = []
@@ -88,7 +95,7 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     for config in configs:
         (args.output / (config['name'] + '.yaml')).write_text(yaml.safe_dump(config, sort_keys=False))
-    with open('svd_direction_manifest.csv', 'w', newline='') as f:
+    with open('svd_extremes_manifest.csv', 'w', newline='') as f:
         w = csv.writer(f)
         w.writerow(['name', 'attack', 'reference_run_id', 'direction', 'percent', 'reference_delta_l2', 'scale'])
         w.writerows(manifest)
