@@ -143,7 +143,7 @@ def record_error(description, error, progress, path, error_log):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--schedule", type=Path, default=Path("schedual"))
+    parser.add_argument("--schedule", type=Path, default=Path("schedule"))
     parser.add_argument("--error-log", type=Path, default=Path("results/run-errors.jsonl"))
     parser.add_argument("--fail-fast", action="store_true", help="Stop immediately on a run error (debugging)")
     parser.add_argument("--strict-errors", action="store_true", help="Exit with status 1 after the batch if any runs errored")

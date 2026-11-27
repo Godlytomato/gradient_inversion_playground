@@ -1,0 +1,125 @@
+[
+  {
+    "subset": "001",
+    "servers": [
+      0
+    ],
+    "disguise_slot": 101,
+    "disguise_index": 10057,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 1.5946433781059648,
+    "gradient_distance_to_ground_truth": 2.7071414384352006,
+    "gradient_margin": 1.1124980603292358,
+    "observation_sha256": "139772419f686216f81c2593f3b5271e499d02810baafda99d7094efb60921e9",
+    "gradient_l2_to_disguise": 1.2627918981787793,
+    "gradient_l2_to_ground_truth": 1.6453393079955272,
+    "disguise_residual_nnz": 79126,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 4000,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  },
+  {
+    "subset": "010",
+    "servers": [
+      1
+    ],
+    "disguise_slot": 101,
+    "disguise_index": 10057,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 1.585961411558947,
+    "gradient_distance_to_ground_truth": 2.699933430074464,
+    "gradient_margin": 1.113972018515517,
+    "observation_sha256": "02598e8a686858a455ab4725cef96004eace53bf14477ac401ea8c0e3e30dd7a",
+    "gradient_l2_to_disguise": 1.2593495986257934,
+    "gradient_l2_to_ground_truth": 1.643147415807378,
+    "disguise_residual_nnz": 79126,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 4000,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  },
+  {
+    "subset": "011",
+    "servers": [
+      0,
+      1
+    ],
+    "disguise_slot": 940,
+    "disguise_index": 46877,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 0.8625071342839365,
+    "gradient_distance_to_ground_truth": 1.0769795660027097,
+    "gradient_margin": 0.21447243171877317,
+    "observation_sha256": "685fa2cc77dae80082e241270020a808835b74c760787f43a65232c6fa883241",
+    "gradient_l2_to_disguise": 0.9287126220117483,
+    "gradient_l2_to_ground_truth": 1.037776260088228,
+    "disguise_residual_nnz": 79944,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 3182,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  },
+  {
+    "subset": "100",
+    "servers": [
+      2
+    ],
+    "disguise_slot": 101,
+    "disguise_index": 10057,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 0.710605864927391,
+    "gradient_distance_to_ground_truth": 1.8454741830150576,
+    "gradient_margin": 1.1348683180876666,
+    "observation_sha256": "7c551017171a94a4dbd477d05207cda01808fbc0a4619cdbd1060dd9c353156e",
+    "gradient_l2_to_disguise": 0.84297441534568,
+    "gradient_l2_to_ground_truth": 1.3584823086868145,
+    "disguise_residual_nnz": 79126,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 4000,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  },
+  {
+    "subset": "101",
+    "servers": [
+      0,
+      2
+    ],
+    "disguise_slot": 681,
+    "disguise_index": 44512,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 0.2462210297767452,
+    "gradient_distance_to_ground_truth": 0.4839449920782377,
+    "gradient_margin": 0.2377239623014925,
+    "observation_sha256": "7aa77011a9f1a7d4ac4cb2db0b4f9ef2066e30ee8dbc0e644bcfea8be7b61eb7",
+    "gradient_l2_to_disguise": 0.49620664019815897,
+    "gradient_l2_to_ground_truth": 0.6956615499495697,
+    "disguise_residual_nnz": 80092,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 3034,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  },
+  {
+    "subset": "110",
+    "servers": [
+      1,
+      2
+    ],
+    "disguise_slot": 587,
+    "disguise_index": 49693,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 0.24873788634081712,
+    "gradient_distance_to_ground_truth": 0.4896224283860262,
+    "gradient_margin": 0.2408845420452091,
+    "observation_sha256": "87bb761d70cec1d0610c4513f4c51bf0e9c8be9bdc8e153e13d570dc89006d05",
+    "gradient_l2_to_disguise": 0.4987362893762766,
+    "gradient_l2_to_ground_truth": 0.6997302540165219,
+    "disguise_residual_nnz": 79992,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 3134,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  }
+]

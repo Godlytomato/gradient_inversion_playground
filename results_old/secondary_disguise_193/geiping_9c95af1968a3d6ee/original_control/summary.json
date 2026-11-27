@@ -1,0 +1,162 @@
+{
+  "outcome": "failure",
+  "stopping_outcome": "failure",
+  "reason": "no_improvement",
+  "total_iterations": 6379,
+  "best_metrics": {
+    "attack_loss": 0.00028794503305107355,
+    "objective_evaluations": 10308,
+    "gradient_evaluations": 10308,
+    "outer_iterations": 5154,
+    "restarts_started": 6,
+    "elapsed_seconds": 32.28821282228455,
+    "restart_index": 5,
+    "pixel_min": 0.0,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.002525627613067627,
+    "selected_label": 1,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "best_step": 5154,
+  "best_assignment": null,
+  "oracle_best_metrics": {},
+  "oracle_best_step": null,
+  "oracle_best_assignment": null,
+  "evaluation": {
+    "private_mse": 0.06644865870475769,
+    "private_ssim": 0.501181960105896,
+    "clamped_private_mse": 0.06644865870475769,
+    "public_min_mse": 0.08255747705698013,
+    "public_max_ssim": 0.3211062252521515,
+    "public_mse_index": 24276,
+    "public_ssim_index": 24276,
+    "public_mse_advantage": -0.016108818352222443,
+    "public_ssim_advantage": -0.1800757348537445,
+    "gradient_l2_squared": 1.5520355258244554,
+    "true_label_gradient_l2_squared": 1.5520355258244554,
+    "oracle_private_gradient_l2_squared": 0.0,
+    "pixel_min": 0.0,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0
+  },
+  "selection": {
+    "practical": {
+      "metric": "attack_loss",
+      "direction": "minimize"
+    },
+    "oracle": null
+  },
+  "run_metrics": {
+    "objective_evaluations": 12758,
+    "gradient_evaluations": 12758,
+    "outer_iterations": 6379,
+    "restarts_started": 8,
+    "elapsed_seconds": 39.97572429198772,
+    "restart_index": 7
+  },
+  "experiment_metadata": {},
+  "last_metrics": {
+    "attack_loss": 0.0006927226204425097,
+    "objective_evaluations": 12758,
+    "gradient_evaluations": 12758,
+    "outer_iterations": 6379,
+    "restarts_started": 8,
+    "elapsed_seconds": 39.97572429198772,
+    "restart_index": 7,
+    "pixel_min": 0.0,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.002556990832090378,
+    "selected_label": 1,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "image_domain": "raw_0_1",
+  "attempt_stopping_reasons": [
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement"
+  ],
+  "attempt_diagnostics": [
+    {
+      "restart": 0,
+      "reason": "no_improvement",
+      "final_objective": 0.0006470060907304287,
+      "iterations": 613,
+      "last_pixel_step_max": 0.0034804344177246094
+    },
+    {
+      "restart": 1,
+      "reason": "no_improvement",
+      "final_objective": 0.0009533746051602066,
+      "iterations": 1148,
+      "last_pixel_step_max": 0.0027456581592559814
+    },
+    {
+      "restart": 2,
+      "reason": "no_improvement",
+      "final_objective": 0.0016076554311439395,
+      "iterations": 439,
+      "last_pixel_step_max": 0.0014769434928894043
+    },
+    {
+      "restart": 3,
+      "reason": "no_improvement",
+      "final_objective": 0.0010139911901205778,
+      "iterations": 650,
+      "last_pixel_step_max": 0.0026143789291381836
+    },
+    {
+      "restart": 4,
+      "reason": "no_improvement",
+      "final_objective": 0.0016307824989780784,
+      "iterations": 1179,
+      "last_pixel_step_max": 0.0030991658568382263
+    },
+    {
+      "restart": 5,
+      "reason": "no_improvement",
+      "final_objective": 0.00028967359685339034,
+      "iterations": 1325,
+      "last_pixel_step_max": 0.0034420788288116455
+    },
+    {
+      "restart": 6,
+      "reason": "no_improvement",
+      "final_objective": 0.0007081006770022213,
+      "iterations": 539,
+      "last_pixel_step_max": 0.0017399191856384277
+    },
+    {
+      "restart": 7,
+      "reason": "no_improvement",
+      "final_objective": 0.0006927226204425097,
+      "iterations": 486,
+      "last_pixel_step_max": 0.002556990832090378
+    }
+  ],
+  "input_identity": {
+    "observation_sha256": "99b1cd466be4fb86e4b54c131e6a27bf7b646034bf015536a85e5ff1231381ef",
+    "model_sha256": "2865e346b498d121f2710f1b351f3f585e2fc624079b1583dee32cc4ec0946d6",
+    "input_shape": [
+      3,
+      32,
+      32
+    ],
+    "class_count": 10,
+    "known_label_sha256": "38c98bb7b920c1bf5601421ec33dc178c0042ed161708150c567c7e7f6e21cad"
+  },
+  "execution_protocol": "reconstruction_v2",
+  "preset": "geiping",
+  "profile": "calibrated",
+  "configuration": "9c95af1968a3d6ee",
+  "reconstruction_sha256": "3288c9f8ce08e4667dfb8663399e96faf2ab91bdabec9753d26b7702eaf197d6",
+  "observation_role": "undecomposed_gradient_diagnostic_control"
+}

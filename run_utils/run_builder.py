@@ -401,7 +401,7 @@ def validate_transformations(transformations):
         arguments = dict(runtime)
         arguments.update(parameters)
         try:
-            inspect.signature(registry[name].func).bind(**arguments)
+            inspect.signature(registry[name].func).bind_partial(**arguments)
         except TypeError as error:
             raise ValueError(f"Invalid parameters for {name}: {error}") from error
 

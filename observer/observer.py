@@ -75,8 +75,26 @@ class observer:
                 return
         for policy in self.config.fail_policies:
             if policy.function(self, **policy.parameters):
+                current_mse = self.current_metrics.get("mse")
+                best_mse = self.best_metrics.get("mse")
+
+                success_config = [
+                    (p.name, p.parameters)
+                    for p in self.config.success_policies
+                ]
+
+                print(
+                    "\n[EARLY STOP FAILURE]",
+                    f"\nReason: {policy.name}",
+                    f"\nCurrent MSE: {current_mse}",
+                    f"\nBest MSE: {best_mse}",
+                    f"\nSuccess policies: {success_config}",
+                    f"\nIteration: {self.attempt_step}",
+                    f"\nRestart-independent step: {self.step}",
+                )
+
                 self.outcome = "failure"
-                self.outcome_reason = policy.name or policy.function.__name__
+                self.outcome_reason = policy.name
                 return
 
     def should_stop(self) -> bool:

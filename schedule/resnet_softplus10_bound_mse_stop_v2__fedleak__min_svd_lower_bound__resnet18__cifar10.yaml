@@ -1,0 +1,130 @@
+name: resnet_softplus10_bound_mse_stop_v2__fedleak__min_svd_lower_bound__resnet18__cifar10
+model: resnet18
+data:
+  dataset: cifar10
+  size: 1
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+gradient_transformations:
+- name: min_svd_lower_bound
+  ranking_policy:
+    name: min_svd
+    parameters:
+      solver_method: positive_svd_v1
+      rank_policy: smallest_nonzero
+      relative_rank_tolerance: 1.0e-05
+      solver_seed: 0
+      krylov_max_iterations: 512
+      krylov_check_every: 16
+      krylov_max_elements: 8000000
+      dense_max_elements: 300000000
+      dense_max_input_size: 4096
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 0.1
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: min_svd_alignment
+        parameters:
+          solver_method: positive_svd_v1
+          rank_policy: smallest_nonzero
+          relative_rank_tolerance: 1.0e-05
+          solver_seed: 0
+          krylov_max_iterations: 512
+          krylov_check_every: 16
+          krylov_max_elements: 8000000
+          dense_max_elements: 300000000
+          dense_max_input_size: 4096
+      scaling:
+        name: lower_bound_threshold
+        parameters:
+          target_error: 0.02
+          mu_j_method: empirical
+          mu_j_debug: false
+          bound_method: directional_residual_v1
+          residual_l2: 0.0
+          residual_fraction: 0.1
+          softplus_beta: 10.0
+attack:
+  attack_type: optimization
+  initialization_policy: random
+  label_policy: known
+  restarts: 3
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  loss:
+    name: partial_gradient_matching
+    parameters:
+      percent: 0.1
+  missingness_policy: visible_only
+  preprocessing_gradients_policy: none
+  loss_mods: []
+  regularizers: []
+  post_update_mods:
+  - name: clamp
+    parameters:
+      minimum: 0.0
+      maximum: 1.0
+  pre_update_mods:
+  - name: fedleak_gradient_regularization
+    parameters:
+      perturbation_size: 0.01
+      blend: 0.5
+  scheduler: null
+  gan_description: null
+  base_seed: 0
+attack_name: fedleak
+defense_name: min_svd_lower_bound
+observer:
+  success_policies:
+  - name: target_mse
+    parameters:
+      threshold: 0.02
+  fail_policies:
+  - name: no_improvement
+    parameters:
+      metric: mse
+      patience: 200
+      minimum_change: 0.0001
+  - name: max_iterations
+    parameters:
+      limit: 1000
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  best_selection:
+    metric: mse
+    direction: minimize
+  oracle_selection:
+    metric: mse
+    direction: minimize
+  batch_matching: assignment
+  evaluation_target_mse: 0.02
+  evaluation_target_clip_confidence: null
+experiment_seed: 0
+protocol_version: 2

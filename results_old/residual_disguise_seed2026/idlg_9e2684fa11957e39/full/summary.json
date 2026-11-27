@@ -1,0 +1,133 @@
+{
+  "outcome": "failure",
+  "stopping_outcome": "failure",
+  "reason": "no_improvement",
+  "total_iterations": 917,
+  "best_metrics": {
+    "attack_loss": 2.262255627272225e-08,
+    "objective_evaluations": 2773,
+    "gradient_evaluations": 2773,
+    "outer_iterations": 258,
+    "restarts_started": 2,
+    "elapsed_seconds": 12.18714760709554,
+    "restart_index": 1,
+    "pixel_min": 0.11127731949090958,
+    "pixel_max": 0.861734926700592,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.00021895766258239746,
+    "selected_label": 2,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "best_step": 258,
+  "best_assignment": null,
+  "oracle_best_metrics": {},
+  "oracle_best_step": null,
+  "oracle_best_assignment": null,
+  "evaluation": {
+    "private_mse": 0.0018968302756547928,
+    "private_ssim": 0.957986056804657,
+    "clamped_private_mse": 0.0018968302756547928,
+    "gradient_l2_squared": 2.2622554200631913e-08,
+    "true_label_gradient_l2_squared": 2.2622554200631913e-08,
+    "oracle_private_gradient_l2_squared": 6.361242287817354e-14,
+    "pixel_min": 0.11127731949090958,
+    "pixel_max": 0.861734926700592,
+    "outside_pixel_fraction": 0.0,
+    "ground_truth_mse": 0.0018968302756547928,
+    "ground_truth_ssim": 0.957986056804657
+  },
+  "selection": {
+    "practical": {
+      "metric": "attack_loss",
+      "direction": "minimize"
+    },
+    "oracle": null
+  },
+  "run_metrics": {
+    "objective_evaluations": 8579,
+    "gradient_evaluations": 8579,
+    "outer_iterations": 917,
+    "restarts_started": 4,
+    "elapsed_seconds": 35.80341133195907,
+    "restart_index": 3
+  },
+  "experiment_metadata": {},
+  "last_metrics": {
+    "attack_loss": 3.129058612216795e-08,
+    "objective_evaluations": 8579,
+    "gradient_evaluations": 8579,
+    "outer_iterations": 917,
+    "restarts_started": 4,
+    "elapsed_seconds": 35.80341133195907,
+    "restart_index": 3,
+    "pixel_min": 0.05193834751844406,
+    "pixel_max": 0.8938896059989929,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.0,
+    "selected_label": 2,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "image_domain": "raw_0_1",
+  "attempt_stopping_reasons": [
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement"
+  ],
+  "attempt_diagnostics": [
+    {
+      "restart": 0,
+      "reason": "no_improvement",
+      "final_objective": 3.314339380722231e-08,
+      "iterations": 230,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 1,
+      "reason": "no_improvement",
+      "final_objective": 2.262255627272225e-08,
+      "iterations": 227,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 2,
+      "reason": "no_improvement",
+      "final_objective": 2.6818989695698292e-08,
+      "iterations": 229,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 3,
+      "reason": "no_improvement",
+      "final_objective": 3.129058612216795e-08,
+      "iterations": 231,
+      "last_pixel_step_max": 0.0
+    }
+  ],
+  "input_identity": {
+    "observation_sha256": "31efe9e6c5b74e0c0e757598ce51e35774cad2303d310a064e277ea079d65299",
+    "model_sha256": "dd69385a385e631f40e8dc5673ad026601223494081b84bb38fa7977a23dfcc5",
+    "input_shape": [
+      3,
+      32,
+      32
+    ],
+    "class_count": 10,
+    "known_label_sha256": null
+  },
+  "execution_protocol": "reconstruction_v2",
+  "preset": "idlg",
+  "profile": "calibrated",
+  "configuration": "9e2684fa11957e39",
+  "reconstruction_sha256": "01082aedea0e1f045105992d10ccf1ec3afe7d459b0e081c7b1261c3e12c6042",
+  "workflow_protocol": "fixed_disguise_v3",
+  "model": "lenet5",
+  "dataset": "cifar10",
+  "seed": 2026,
+  "private_index": 564,
+  "decomposition": "residual",
+  "residual_nnz_gap": 1000,
+  "max_disguise_distance_squared": null
+}

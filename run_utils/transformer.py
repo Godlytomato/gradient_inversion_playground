@@ -100,7 +100,15 @@ def transformer(
                 noise_tensors,
                 selection_masks
             )
+        elif transform.name == "ppga":
 
+            ppga_transform = transform_dict["ppga"]
+
+            package = ppga_transform.func(
+                package,
+                selection_masks,
+                **transform.parameters
+            )
         else:
             raise ValueError(
                 f"Unknown transformation: {transform.name}"

@@ -33,14 +33,24 @@ def generate_run(
     model_preset,
     dataset_preset,
     target,
+    *,
+    success_policies=None,
+    fail_policies=None,
+    metrics=None,
+    best_selection=None,
+    evaluation_target_mse="default",
+    evaluation_target_clip_confidence=None,
 ) -> run_desc:
 
     attack = attack_preset.build()
-    # A generated target sweep should change target-calibrated defenses as well
-    # as its evaluation threshold. Explicit YAML may still choose them separately.
+
+    # Pass target to defenses that require target_error.
     defense_parameters = {}
-    if "target_error" in inspect.signature(defense_preset.builder).parameters:
+    if "target_error" in inspect.signature(
+        defense_preset.builder
+    ).parameters:
         defense_parameters["target_error"] = target
+
     defense = defense_preset.build(**defense_parameters)
     model = model_preset.build()
     data = dataset_preset.build()
@@ -51,6 +61,41 @@ def generate_run(
         f"__{model_preset.name}"
         f"__{dataset_preset.name}"
     )
+
+    # Default observer policies
+    if success_policies is None:
+        success_policies = []
+
+    if fail_policies is None:
+        fail_policies = [
+            function_package(
+                name="max_iterations",
+                parameters={
+                    "limit": attack_preset.max_iterations,
+                },
+            ),
+        ]
+
+    if metrics is None:
+        metrics = [
+            function_package(name="mse"),
+            function_package(name="psnr"),
+            function_package(name="ssim"),
+        ]
+
+    if best_selection is None:
+        best_selection = best_selection_description(
+            metric="attack_loss",
+            direction="minimize",
+        )
+
+    if evaluation_target_mse == "default":
+        evaluation_target_mse = target
+
+    # Automatically log configured metrics plus attack loss.
+    logging_metrics = list(dict.fromkeys(
+        [metric.name for metric in metrics] + ["attack_loss"]
+    ))
 
     return run_desc(
         name=name,
@@ -63,45 +108,28 @@ def generate_run(
         defense_name=defense_preset.name,
 
         observer=observer_description(
-            # Ground truth evaluates recovery after the fixed attack budget;
-            # it must not decide the practical attack's stopping time.
-            success_policies=[],
-
-            fail_policies=[
-                function_package(
-                    name="max_iterations",
-                    parameters={
-                        "limit": attack_preset.max_iterations,
-                    },
-                ),
-            ],
-
-            metrics=[
-                function_package(name="mse"),
-                function_package(name="psnr"),
-                function_package(name="ssim"),
-            ],
+            success_policies=success_policies,
+            fail_policies=fail_policies,
+            metrics=metrics,
 
             logging=logging_description(
                 logging_type="database",
-                metrics=[
-                    "mse",
-                    "psnr",
-                    "ssim",
-                    "attack_loss",
-                ],
+                metrics=logging_metrics,
             ),
 
-            best_selection=best_selection_description(
-                metric="attack_loss",
-                direction="minimize",
-            ),
+            best_selection=best_selection,
+
             oracle_selection=best_selection_description(
                 metric="mse",
                 direction="minimize",
             ),
+
             batch_matching="assignment",
-            evaluation_target_mse=target,
+
+            evaluation_target_mse=evaluation_target_mse,
+            evaluation_target_clip_confidence=(
+                evaluation_target_clip_confidence
+            ),
         ),
     )
 
@@ -198,7 +226,10 @@ def generate_yamls(
         descriptions.append(description)
 
     # Validate the complete matrix before writing files.
-    names = [description.name for description in descriptions]
+    names = [
+        description.name
+        for description in descriptions
+    ]
 
     if len(names) != len(set(names)):
         raise ValueError(

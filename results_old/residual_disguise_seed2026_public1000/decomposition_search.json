@@ -1,0 +1,1159 @@
+{
+  "solver": "residual_sparse_v1",
+  "reference_span_dimension": 1001,
+  "residual_nnz_gap": 1000,
+  "max_disguise_distance_squared": null,
+  "sparsity_measure": "exact nonzero count of float64 differences of float32 observations and reference gradients",
+  "objective": "lexicographic descending squared disguise distances, then descending disguise residual nonzeros, then extra share nonzeros",
+  "search_budget": 8,
+  "searched_candidates": 8,
+  "attempts": [
+    {
+      "candidate": "projection",
+      "all_coalitions_pass": false,
+      "float32_aggregation_pass": true,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 0,
+      "maximum_disguise_distance_squared": 1.5945991051929038,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 2.7070971652720077,
+          "public_distance": 1.5945991051929038,
+          "public_slot": 101,
+          "private_norm": 1.64532585382714,
+          "public_norm": 1.262774368283148,
+          "disguise_residual_nnz": 83126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 0,
+          "residual_sparsity_pass": false,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.112498060079104,
+          "passed": false
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 2.6999039938754237,
+          "public_distance": 1.5859319755434673,
+          "public_slot": 101,
+          "private_norm": 1.6431384585224167,
+          "public_norm": 1.2593379115803143,
+          "disguise_residual_nnz": 83126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 0,
+          "residual_sparsity_pass": false,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1139720183319564,
+          "passed": false
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 1.0769647667241478,
+          "public_distance": 0.8624923350863334,
+          "public_slot": 940,
+          "private_norm": 1.037769129779908,
+          "public_norm": 0.9287046543903683,
+          "disguise_residual_nnz": 83126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 0,
+          "residual_sparsity_pass": false,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447243163781438,
+          "passed": false
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 1.8454593575750724,
+          "public_distance": 0.7105910405188041,
+          "public_slot": 101,
+          "private_norm": 1.3584768520571384,
+          "public_norm": 0.8429656223825525,
+          "disguise_residual_nnz": 83126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 0,
+          "residual_sparsity_pass": false,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348683170562683,
+          "passed": false
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 0.483915553645205,
+          "public_distance": 0.24619159351485406,
+          "public_slot": 681,
+          "private_norm": 0.6956403910392244,
+          "public_norm": 0.4961769780177775,
+          "disguise_residual_nnz": 83126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 0,
+          "residual_sparsity_pass": false,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.23772396013035094,
+          "passed": false
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 0.48957816157360656,
+          "public_distance": 0.24869361934255824,
+          "public_slot": 587,
+          "private_norm": 0.6996986219606314,
+          "public_norm": 0.49869190823850174,
+          "disguise_residual_nnz": 83126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 0,
+          "residual_sparsity_pass": false,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.24088454223104833,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "candidate": "matching_0_count_4000",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": true,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 3034,
+      "maximum_disguise_distance_squared": 1.5946433781059648,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 2.7071414384352006,
+          "public_distance": 1.5946433781059648,
+          "public_slot": 101,
+          "private_norm": 1.6453393079955272,
+          "public_norm": 1.2627918981787793,
+          "disguise_residual_nnz": 79126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 4000,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1124980603292358,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 2.699933430074464,
+          "public_distance": 1.585961411558947,
+          "public_slot": 101,
+          "private_norm": 1.643147415807378,
+          "public_norm": 1.2593495986257934,
+          "disguise_residual_nnz": 79126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 4000,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.113972018515517,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 1.0769795660027097,
+          "public_distance": 0.8625071342839365,
+          "public_slot": 940,
+          "private_norm": 1.037776260088228,
+          "public_norm": 0.9287126220117483,
+          "disguise_residual_nnz": 79944,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 3182,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447243171877317,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 1.8454741830150576,
+          "public_distance": 0.710605864927391,
+          "public_slot": 101,
+          "private_norm": 1.3584823086868145,
+          "public_norm": 0.84297441534568,
+          "disguise_residual_nnz": 79126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 4000,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348683180876666,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 0.4839449920782377,
+          "public_distance": 0.2462210297767452,
+          "public_slot": 681,
+          "private_norm": 0.6956615499495697,
+          "public_norm": 0.49620664019815897,
+          "disguise_residual_nnz": 80092,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 3034,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.2377239623014925,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 0.4896224283860262,
+          "public_distance": 0.24873788634081712,
+          "public_slot": 587,
+          "private_norm": 0.6997302540165219,
+          "public_norm": 0.4987362893762766,
+          "disguise_residual_nnz": 79992,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 3134,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.2408845420452091,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "candidate": "matching_1_count_8000",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": true,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 6262,
+      "maximum_disguise_distance_squared": 1.5954347999310627,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 2.7079328605581208,
+          "public_distance": 1.5954347999310627,
+          "public_slot": 101,
+          "private_norm": 1.645579794649327,
+          "public_norm": 1.263105221242895,
+          "disguise_residual_nnz": 75126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 8000,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.112498060627058,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 2.7006145794306953,
+          "public_distance": 1.5866425613368746,
+          "public_slot": 101,
+          "private_norm": 1.643354672440096,
+          "public_norm": 1.2596200067230097,
+          "disguise_residual_nnz": 75126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 8000,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1139720180938206,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 1.0770900630503155,
+          "public_distance": 0.8626176304828947,
+          "public_slot": 940,
+          "private_norm": 1.0378294961361985,
+          "public_norm": 0.928772109014313,
+          "disguise_residual_nnz": 76587,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 6539,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447243256742077,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 1.8455846930929525,
+          "public_distance": 0.7107163757995139,
+          "public_slot": 101,
+          "private_norm": 1.3585229821732692,
+          "public_norm": 0.843039960974279,
+          "disguise_residual_nnz": 75126,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 8000,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348683172934386,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 0.4846261415499171,
+          "public_distance": 0.2469021795374191,
+          "public_slot": 681,
+          "private_norm": 0.6961509473885079,
+          "public_norm": 0.49689252312488974,
+          "disguise_residual_nnz": 76395,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 6731,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.237723962012498,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 0.4904138785927017,
+          "public_distance": 0.24952933338191977,
+          "public_slot": 587,
+          "private_norm": 0.7002955651670955,
+          "public_norm": 0.4995291116460779,
+          "disguise_residual_nnz": 76864,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 6262,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.24088454521078193,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "candidate": "matching_2_count_13687",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": false,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 10498,
+      "maximum_disguise_distance_squared": 173856.56810704753,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 173857.68060498688,
+          "public_distance": 173856.56810704753,
+          "public_slot": 101,
+          "private_norm": 416.96244507747565,
+          "public_norm": 416.96111102481433,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1124979393498506,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 95000.23395744327,
+          "public_distance": 94999.11998551061,
+          "public_slot": 101,
+          "private_norm": 308.2210796773045,
+          "public_norm": 308.21927257313195,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1139719326602062,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 90559.34842259916,
+          "public_distance": 90559.13395033161,
+          "public_slot": 940,
+          "private_norm": 300.9308033794466,
+          "public_norm": 300.9304470310899,
+          "disguise_residual_nnz": 72628,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 10498,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447226754389703,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 90560.11575462212,
+          "public_distance": 90558.98088638044,
+          "public_slot": 101,
+          "private_norm": 300.93207830775054,
+          "public_norm": 300.9301927131614,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348682416864904,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 94998.01811665558,
+          "public_distance": 94997.78039287803,
+          "public_slot": 681,
+          "private_norm": 308.2174850923542,
+          "public_norm": 308.21709944919996,
+          "disguise_residual_nnz": 72001,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 11125,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.23772377755085472,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 173855.4624092104,
+          "public_distance": 173855.22152482223,
+          "public_slot": 587,
+          "private_norm": 416.959785122271,
+          "public_norm": 416.95949626411226,
+          "disguise_residual_nnz": 70834,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 12292,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.24088438815670088,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "candidate": "matching_3_count_13687",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": false,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 11572,
+      "maximum_disguise_distance_squared": 495301.07790244895,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 437156.7829604399,
+          "public_distance": 437155.67046249873,
+          "public_slot": 101,
+          "private_norm": 661.1783291672829,
+          "public_norm": 661.1774878672887,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.112497941183392,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 495302.19187434134,
+          "public_distance": 495301.07790244895,
+          "public_slot": 101,
+          "private_norm": 703.7770896202443,
+          "public_norm": 703.7762981959885,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1139718923950568,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 14784.925783474711,
+          "public_distance": 14784.711311012788,
+          "public_slot": 940,
+          "private_norm": 121.5932801740076,
+          "public_norm": 121.59239824517316,
+          "disguise_residual_nnz": 71173,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 11953,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447246192292369,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 14785.694632715371,
+          "public_distance": 14784.559764407451,
+          "public_slot": 101,
+          "private_norm": 121.5964416943003,
+          "public_norm": 121.59177506890609,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348683079195325,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 495299.97388923913,
+          "public_distance": 495299.73616510537,
+          "public_slot": 681,
+          "private_norm": 703.7755138460268,
+          "public_norm": 703.7753449539885,
+          "disguise_residual_nnz": 71072,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 12054,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.2377241337671876,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 437154.5680784732,
+          "public_distance": 437154.32719380246,
+          "public_slot": 587,
+          "private_norm": 661.1766542146457,
+          "public_norm": 661.1764720509967,
+          "disguise_residual_nnz": 71554,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 11572,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.24088467075489461,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "candidate": "matching_5_count_13687",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": false,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 10540,
+      "maximum_disguise_distance_squared": 195929.61953734996,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 195930.7320356243,
+          "public_distance": 195929.61953734996,
+          "public_slot": 101,
+          "private_norm": 442.6406353190185,
+          "public_norm": 442.63937865642947,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1124982743349392,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 175804.51516278018,
+          "public_distance": 175803.40119070356,
+          "public_slot": 101,
+          "private_norm": 419.2904901888191,
+          "public_norm": 419.28916178540027,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1139720766223036,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 14829.284369608375,
+          "public_distance": 14829.069897175574,
+          "public_slot": 940,
+          "private_norm": 121.77554914517272,
+          "public_norm": 121.77466853650465,
+          "disguise_residual_nnz": 70972,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 12154,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447243280090333,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 14830.053159312296,
+          "public_distance": 14828.918291027858,
+          "public_slot": 101,
+          "private_norm": 121.77870568909943,
+          "public_norm": 121.77404604852323,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348682844381983,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 175802.29988372824,
+          "public_distance": 175802.06215969007,
+          "public_slot": 681,
+          "private_norm": 419.2878484808834,
+          "public_norm": 419.28756499530255,
+          "disguise_residual_nnz": 72586,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 10540,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.23772403816110454,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 195928.5129080708,
+          "public_distance": 195928.27202369933,
+          "public_slot": 587,
+          "private_norm": 442.6381286198364,
+          "public_norm": 442.6378565189599,
+          "disguise_residual_nnz": 70919,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 12207,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.24088437148020603,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "candidate": "matching_6_count_13687",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": false,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 10686,
+      "maximum_disguise_distance_squared": 150774.99763335264,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 150776.11013144313,
+          "public_distance": 150774.99763335264,
+          "public_slot": 101,
+          "private_norm": 388.2989957898979,
+          "public_norm": 388.29756325961233,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1124980904860422,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 36444.33165537854,
+          "public_distance": 36443.21768329486,
+          "public_slot": 101,
+          "private_norm": 190.90398543607867,
+          "public_norm": 190.90106778982368,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1139720836799825,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 118235.34701155039,
+          "public_distance": 118235.13253895755,
+          "public_slot": 940,
+          "private_norm": 343.85367092929283,
+          "public_norm": 343.8533590630715,
+          "disguise_residual_nnz": 72440,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 10686,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447259283741005,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 118236.11399804584,
+          "public_distance": 118234.97912972953,
+          "public_slot": 101,
+          "private_norm": 343.85478620784943,
+          "public_norm": 343.8531359893778,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348683163087117,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 36442.115720318536,
+          "public_distance": 36441.87799630861,
+          "public_slot": 681,
+          "private_norm": 190.89818155320006,
+          "public_norm": 190.8975589061018,
+          "disguise_residual_nnz": 71236,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 11890,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.23772400992311304,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 150773.88918927312,
+          "public_distance": 150773.64830475277,
+          "public_slot": 587,
+          "private_norm": 388.2961359442985,
+          "public_norm": 388.2958257627202,
+          "disguise_residual_nnz": 72154,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 10972,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.2408845203462988,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "candidate": "matching_7_count_13687",
+      "all_coalitions_pass": true,
+      "float32_aggregation_pass": false,
+      "float64_aggregation_pass": true,
+      "minimum_residual_nnz_advantage": 10528,
+      "maximum_disguise_distance_squared": 619414.9747106648,
+      "coalition_geometry": [
+        {
+          "coalition": 1,
+          "servers": [
+            0
+          ],
+          "private_distance": 597980.3474895582,
+          "public_distance": 597979.2349915828,
+          "public_slot": 101,
+          "private_norm": 773.2918902261669,
+          "public_norm": 773.2911708997995,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.112497975351289,
+          "passed": true
+        },
+        {
+          "coalition": 2,
+          "servers": [
+            1
+          ],
+          "private_distance": 7694.219062941374,
+          "public_distance": 7693.1050909211135,
+          "public_slot": 101,
+          "private_norm": 87.71669774302596,
+          "public_norm": 87.71034768441585,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.113972020260917,
+          "passed": true
+        },
+        {
+          "coalition": 3,
+          "servers": [
+            0,
+            1
+          ],
+          "private_distance": 619415.1891829465,
+          "public_distance": 619414.9747106648,
+          "public_slot": 940,
+          "private_norm": 787.0293445500914,
+          "public_norm": 787.029208295769,
+          "disguise_residual_nnz": 72598,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 10528,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.21447228163015097,
+          "passed": true
+        },
+        {
+          "coalition": 4,
+          "servers": [
+            2
+          ],
+          "private_distance": 619415.9450260705,
+          "public_distance": 619414.8101575787,
+          "public_slot": 101,
+          "private_norm": 787.0298247373288,
+          "public_norm": 787.0291037551144,
+          "disguise_residual_nnz": 69439,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 13687,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 1.1348684917902574,
+          "passed": true
+        },
+        {
+          "coalition": 5,
+          "servers": [
+            0,
+            2
+          ],
+          "private_distance": 7692.002581986677,
+          "public_distance": 7691.764858063969,
+          "public_slot": 681,
+          "private_norm": 87.70406251700474,
+          "public_norm": 87.70270724478218,
+          "disguise_residual_nnz": 72003,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 11123,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.2377239227080281,
+          "passed": true
+        },
+        {
+          "coalition": 6,
+          "servers": [
+            1,
+            2
+          ],
+          "private_distance": 597978.1192241972,
+          "public_distance": 597977.8783395484,
+          "public_slot": 587,
+          "private_norm": 773.2904494588028,
+          "public_norm": 773.2902937057651,
+          "disguise_residual_nnz": 72423,
+          "ground_truth_residual_nnz": 83126,
+          "residual_nnz_advantage": 10703,
+          "residual_sparsity_pass": true,
+          "relative_distance_pass": true,
+          "absolute_distance_pass": true,
+          "margin": 0.2408846488688141,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "skipped_patterns": [
+    {
+      "iteration": 4,
+      "coordinates_per_subset": 13687,
+      "reason": "Insufficient eligible/free coordinates or unstable compensation solve"
+    }
+  ],
+  "initializer_geometry": [
+    {
+      "coalition": 1,
+      "servers": [
+        0
+      ],
+      "private_distance": 3.7097605208054194,
+      "public_distance": 2.59726246032342,
+      "public_slot": 101,
+      "private_norm": 1.9260738617211488,
+      "public_norm": 1.6116024510788696,
+      "disguise_residual_nnz": 83126,
+      "ground_truth_residual_nnz": 55431,
+      "residual_nnz_advantage": -27695,
+      "residual_sparsity_pass": false,
+      "relative_distance_pass": true,
+      "absolute_distance_pass": true,
+      "margin": 1.1124980604819994,
+      "passed": true
+    },
+    {
+      "coalition": 2,
+      "servers": [
+        1
+      ],
+      "private_distance": 3.7089952446664247,
+      "public_distance": 2.5950232257884025,
+      "public_slot": 101,
+      "private_norm": 1.9258751892753654,
+      "public_norm": 1.610907578288836,
+      "disguise_residual_nnz": 83126,
+      "ground_truth_residual_nnz": 55404,
+      "residual_nnz_advantage": -27722,
+      "residual_sparsity_pass": false,
+      "relative_distance_pass": true,
+      "absolute_distance_pass": true,
+      "margin": 1.1139720188780222,
+      "passed": true
+    },
+    {
+      "coalition": 3,
+      "servers": [
+        0,
+        1
+      ],
+      "private_distance": 2.216753712042601,
+      "public_distance": 2.0022812794332534,
+      "public_slot": 940,
+      "private_norm": 1.4888766611249573,
+      "public_norm": 1.415019886585787,
+      "disguise_residual_nnz": 83126,
+      "ground_truth_residual_nnz": 27709,
+      "residual_nnz_advantage": -55417,
+      "residual_sparsity_pass": false,
+      "relative_distance_pass": true,
+      "absolute_distance_pass": true,
+      "margin": 0.21447243260934767,
+      "passed": true
+    },
+    {
+      "coalition": 4,
+      "servers": [
+        2
+      ],
+      "private_distance": 2.985248341386641,
+      "public_distance": 1.8503800239955237,
+      "public_slot": 101,
+      "private_norm": 1.7277871227054105,
+      "public_norm": 1.3602867432991927,
+      "disguise_residual_nnz": 83126,
+      "ground_truth_residual_nnz": 55417,
+      "residual_nnz_advantage": -27709,
+      "residual_sparsity_pass": false,
+      "relative_distance_pass": true,
+      "absolute_distance_pass": true,
+      "margin": 1.1348683173911174,
+      "passed": true
+    },
+    {
+      "coalition": 5,
+      "servers": [
+        0,
+        2
+      ],
+      "private_distance": 1.4930068087628183,
+      "public_distance": 1.2552828467166863,
+      "public_slot": 681,
+      "private_norm": 1.2218865776997545,
+      "public_norm": 1.120394058676092,
+      "disguise_residual_nnz": 83125,
+      "ground_truth_residual_nnz": 27722,
+      "residual_nnz_advantage": -55403,
+      "residual_sparsity_pass": false,
+      "relative_distance_pass": true,
+      "absolute_distance_pass": true,
+      "margin": 0.237723962046132,
+      "passed": true
+    },
+    {
+      "coalition": 6,
+      "servers": [
+        1,
+        2
+      ],
+      "private_distance": 1.4922415326238232,
+      "public_distance": 1.2513569884398288,
+      "public_slot": 587,
+      "private_norm": 1.2215733840518233,
+      "public_norm": 1.1186406878170616,
+      "disguise_residual_nnz": 83126,
+      "ground_truth_residual_nnz": 27695,
+      "residual_nnz_advantage": -55431,
+      "residual_sparsity_pass": false,
+      "relative_distance_pass": true,
+      "absolute_distance_pass": true,
+      "margin": 0.2408845441839944,
+      "passed": true
+    }
+  ],
+  "complement_lower_bound_squared": 0.6152362959247839,
+  "complement_public_slots": [
+    587,
+    101
+  ]
+}

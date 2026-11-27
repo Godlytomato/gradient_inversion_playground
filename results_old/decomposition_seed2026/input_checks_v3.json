@@ -1,0 +1,105 @@
+{
+  "decomposition": {
+    "epsilon": 0.11418586735241007,
+    "all_coalitions_pass": true,
+    "float32_max_error": 4.7031790018081665e-07,
+    "float32_relative_error": 2.0620835064185686e-07,
+    "float32_aggregation_pass": true,
+    "extra_nnz": 2,
+    "overlap_coordinates": [
+      910
+    ],
+    "per_server_nnz": [
+      27746,
+      27693,
+      27689
+    ],
+    "per_server_norm": [
+      22.070269069136216,
+      22.07658910736616,
+      44.09048841460574
+    ],
+    "maximum_share_magnitude": 44.07456970214844,
+    "norm_amplification": 19.331237215241728,
+    "float64_max_error": 0.0,
+    "float64_aggregation_pass": true
+  },
+  "coalition_geometry": [
+    {
+      "coalition": 1,
+      "servers": [
+        0
+      ],
+      "private_distance": 489.9989048598754,
+      "public_distance": 489.3184905368546,
+      "public_slot": 81,
+      "margin": 0.6804143230207842,
+      "passed": true
+    },
+    {
+      "coalition": 2,
+      "servers": [
+        1
+      ],
+      "private_distance": 488.50027172207746,
+      "public_distance": 488.05292678331386,
+      "public_slot": 51,
+      "margin": 0.4473449387635924,
+      "passed": true
+    },
+    {
+      "coalition": 3,
+      "servers": [
+        0,
+        1
+      ],
+      "private_distance": 1943.9712100966049,
+      "public_distance": 1943.6421251954437,
+      "public_slot": 51,
+      "margin": 0.3290849011611954,
+      "passed": true
+    },
+    {
+      "coalition": 4,
+      "servers": [
+        2
+      ],
+      "private_distance": 1945.1465575225288,
+      "public_distance": 1941.5169786088745,
+      "public_slot": 85,
+      "margin": 3.6295789136543135,
+      "passed": true
+    },
+    {
+      "coalition": 5,
+      "servers": [
+        0,
+        2
+      ],
+      "private_distance": 487.3757658994334,
+      "public_distance": 487.2612183335881,
+      "public_slot": 94,
+      "margin": 0.11454756584532788,
+      "passed": true
+    },
+    {
+      "coalition": 6,
+      "servers": [
+        1,
+        2
+      ],
+      "private_distance": 487.0967560550138,
+      "public_distance": 486.98245604007576,
+      "public_slot": 94,
+      "margin": 0.11430001493806685,
+      "passed": true
+    }
+  ],
+  "checkpoint_data_gradient_equal": true,
+  "flatten_unpack_roundtrip_equal": true,
+  "true_label": 2,
+  "full_idlg_inferred_label": 2,
+  "full_idlg_label_correct": true,
+  "oracle_original_gradient_l2_squared": 0.0,
+  "oracle_full_gradient_l2_squared": 2.2119892723049261e-13
+}

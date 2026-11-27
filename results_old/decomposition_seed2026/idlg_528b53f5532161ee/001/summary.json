@@ -1,0 +1,145 @@
+{
+  "outcome": "failure",
+  "stopping_outcome": "failure",
+  "reason": "no_improvement",
+  "total_iterations": 811,
+  "best_metrics": {
+    "attack_loss": 485.5801696777344,
+    "objective_evaluations": 2686,
+    "gradient_evaluations": 2686,
+    "outer_iterations": 204,
+    "restarts_started": 2,
+    "elapsed_seconds": 9.672331238165498,
+    "restart_index": 1,
+    "pixel_min": 2.678977629473436e-23,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.1166638731956482,
+    "selected_label": 1,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "best_step": 204,
+  "best_assignment": null,
+  "oracle_best_metrics": {},
+  "oracle_best_step": null,
+  "oracle_best_assignment": null,
+  "evaluation": {
+    "private_mse": 0.21976514160633087,
+    "private_ssim": 0.08747202157974243,
+    "clamped_private_mse": 0.21976514160633087,
+    "gradient_l2_squared": 485.58019511488516,
+    "true_label_gradient_l2_squared": 489.5797494873748,
+    "oracle_private_gradient_l2_squared": 489.9989048598754,
+    "pixel_min": 2.678977629473436e-23,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "ground_truth_mse": 0.21976514160633087,
+    "ground_truth_ssim": 0.08747202157974243,
+    "disguise_mse": 0.21915678679943085,
+    "disguise_ssim": 0.021559560671448708,
+    "disguise_mse_advantage": 0.0006083548069000244,
+    "disguise_ssim_advantage": -0.06591246090829372,
+    "subset": "001",
+    "servers": [
+      0
+    ],
+    "disguise_slot": 81,
+    "disguise_index": 46193,
+    "disguise_label": 6,
+    "gradient_distance_to_disguise": 489.3184905368546,
+    "gradient_distance_to_ground_truth": 489.9989048598754,
+    "gradient_margin": 0.6804143230207842,
+    "observation_sha256": "01bcb01d8517bba29b32bd8ad4faedd5dcd798161a98fba8efbb65faa2876bf9"
+  },
+  "selection": {
+    "practical": {
+      "metric": "attack_loss",
+      "direction": "minimize"
+    },
+    "oracle": null
+  },
+  "run_metrics": {
+    "objective_evaluations": 12591,
+    "gradient_evaluations": 12591,
+    "outer_iterations": 811,
+    "restarts_started": 4,
+    "elapsed_seconds": 45.479856577236205,
+    "restart_index": 3
+  },
+  "experiment_metadata": {},
+  "last_metrics": {
+    "attack_loss": 485.5803527832031,
+    "objective_evaluations": 12591,
+    "gradient_evaluations": 12591,
+    "outer_iterations": 811,
+    "restarts_started": 4,
+    "elapsed_seconds": 45.479856577236205,
+    "restart_index": 3,
+    "pixel_min": 1.3583577734787352e-26,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.0,
+    "selected_label": 1,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "image_domain": "raw_0_1",
+  "attempt_stopping_reasons": [
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement"
+  ],
+  "attempt_diagnostics": [
+    {
+      "restart": 0,
+      "reason": "no_improvement",
+      "final_objective": 485.5804138183594,
+      "iterations": 202,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 1,
+      "reason": "no_improvement",
+      "final_objective": 485.5801696777344,
+      "iterations": 202,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 2,
+      "reason": "no_improvement",
+      "final_objective": 485.5802917480469,
+      "iterations": 203,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 3,
+      "reason": "no_improvement",
+      "final_objective": 485.5803527832031,
+      "iterations": 204,
+      "last_pixel_step_max": 0.0
+    }
+  ],
+  "input_identity": {
+    "observation_sha256": "01bcb01d8517bba29b32bd8ad4faedd5dcd798161a98fba8efbb65faa2876bf9",
+    "model_sha256": "dd69385a385e631f40e8dc5673ad026601223494081b84bb38fa7977a23dfcc5",
+    "input_shape": [
+      3,
+      32,
+      32
+    ],
+    "class_count": 10,
+    "known_label_sha256": null
+  },
+  "execution_protocol": "reconstruction_v2",
+  "preset": "idlg",
+  "profile": "calibrated",
+  "configuration": "528b53f5532161ee",
+  "reconstruction_sha256": "64dfb90af4d2e03a5530f7c382932631d5e342d1d690f10560bd7e81323d505c",
+  "workflow_protocol": "fixed_disguise_v3",
+  "model": "lenet5",
+  "dataset": "cifar10",
+  "seed": 2026,
+  "private_index": 564
+}

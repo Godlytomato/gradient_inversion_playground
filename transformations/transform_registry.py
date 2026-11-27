@@ -23,6 +23,7 @@ from transformations.transformation_implimentations.quantization import (
 from transformations.transformation_implimentations.reduction import (
     reduction
 )
+from transformations.transformation_implimentations.ppga import ppga
 
 
 # noise scaling / thresholds
@@ -58,6 +59,10 @@ transform_dict = {
     "noise": transformation(
         name="noise",
         func=noise
+    ),
+        "ppga": transformation(
+        name="ppga",
+        func=ppga
     ),
 }
 
@@ -104,6 +109,7 @@ noise_construction_dict = {
         name="reduction",
         func=reduction
     ),
+
 }
 
 

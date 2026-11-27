@@ -1,0 +1,83 @@
+[
+  {
+    "subset": "001",
+    "servers": [
+      0
+    ],
+    "disguise_slot": 81,
+    "disguise_index": 46193,
+    "disguise_label": 6,
+    "gradient_distance_to_disguise": 489.3184905368546,
+    "gradient_distance_to_ground_truth": 489.9989048598754,
+    "gradient_margin": 0.6804143230207842,
+    "observation_sha256": "01bcb01d8517bba29b32bd8ad4faedd5dcd798161a98fba8efbb65faa2876bf9"
+  },
+  {
+    "subset": "010",
+    "servers": [
+      1
+    ],
+    "disguise_slot": 51,
+    "disguise_index": 25478,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 488.05292678331386,
+    "gradient_distance_to_ground_truth": 488.50027172207746,
+    "gradient_margin": 0.4473449387635924,
+    "observation_sha256": "6f9af5c8a01b87675e5b567ff9c7e61117048ec0cbd516482a4716a909532097"
+  },
+  {
+    "subset": "011",
+    "servers": [
+      0,
+      1
+    ],
+    "disguise_slot": 51,
+    "disguise_index": 25478,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 1943.6421251954437,
+    "gradient_distance_to_ground_truth": 1943.9712100966049,
+    "gradient_margin": 0.3290849011611954,
+    "observation_sha256": "7f6c2aec12738fd8c75ecfce4a534476d96a6189366b81e39f523ceae8abc3f9"
+  },
+  {
+    "subset": "100",
+    "servers": [
+      2
+    ],
+    "disguise_slot": 85,
+    "disguise_index": 42272,
+    "disguise_label": 0,
+    "gradient_distance_to_disguise": 1941.5169786088745,
+    "gradient_distance_to_ground_truth": 1945.1465575225288,
+    "gradient_margin": 3.6295789136543135,
+    "observation_sha256": "09fef0ed15910ca3aff2490ecc4912d41c8778c68ae0e372d50b0583c95c1c50"
+  },
+  {
+    "subset": "101",
+    "servers": [
+      0,
+      2
+    ],
+    "disguise_slot": 94,
+    "disguise_index": 43422,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 487.2612183335881,
+    "gradient_distance_to_ground_truth": 487.3757658994334,
+    "gradient_margin": 0.11454756584532788,
+    "observation_sha256": "6e8ff968dcb7b079f25eb83f94bcb15d28270ff18cf257369129283020620bd4"
+  },
+  {
+    "subset": "110",
+    "servers": [
+      1,
+      2
+    ],
+    "disguise_slot": 94,
+    "disguise_index": 43422,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 486.98245604007576,
+    "gradient_distance_to_ground_truth": 487.0967560550138,
+    "gradient_margin": 0.11430001493806685,
+    "observation_sha256": "7fecda8d6d467d20e71f921cc2962c03d9e3a5a3919122e7815148baf7cf780d"
+  }
+]

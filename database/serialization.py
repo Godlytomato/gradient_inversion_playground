@@ -3,7 +3,7 @@ from dataclasses import asdict, is_dataclass
 
 from database.hashing import (
     run_hash,
-    attack_hash,
+    attack_hash, 
     defense_hash,
 )
 

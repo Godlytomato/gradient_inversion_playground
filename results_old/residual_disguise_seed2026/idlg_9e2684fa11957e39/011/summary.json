@@ -1,0 +1,156 @@
+{
+  "outcome": "failure",
+  "stopping_outcome": "failure",
+  "reason": "no_improvement",
+  "total_iterations": 819,
+  "best_metrics": {
+    "attack_loss": 27.956575393676758,
+    "objective_evaluations": 4659,
+    "gradient_evaluations": 4659,
+    "outer_iterations": 416,
+    "restarts_started": 3,
+    "elapsed_seconds": 17.182485045865178,
+    "restart_index": 2,
+    "pixel_min": 2.647141225770272e-15,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.10154134035110474,
+    "selected_label": 2,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "best_step": 416,
+  "best_assignment": null,
+  "oracle_best_metrics": {},
+  "oracle_best_step": null,
+  "oracle_best_assignment": null,
+  "evaluation": {
+    "private_mse": 0.23884731531143188,
+    "private_ssim": 0.0843418762087822,
+    "clamped_private_mse": 0.23884731531143188,
+    "gradient_l2_squared": 27.956579426479117,
+    "true_label_gradient_l2_squared": 27.956579426479117,
+    "oracle_private_gradient_l2_squared": 32.59611068674507,
+    "pixel_min": 2.647141225770272e-15,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "ground_truth_mse": 0.23884731531143188,
+    "ground_truth_ssim": 0.0843418762087822,
+    "disguise_mse": 0.2542666494846344,
+    "disguise_ssim": 0.05754396691918373,
+    "disguise_mse_advantage": -0.015419334173202515,
+    "disguise_ssim_advantage": -0.026797909289598465,
+    "subset": "011",
+    "servers": [
+      0,
+      1
+    ],
+    "disguise_slot": 51,
+    "disguise_index": 25478,
+    "disguise_label": 2,
+    "gradient_distance_to_disguise": 32.26702577842996,
+    "gradient_distance_to_ground_truth": 32.59611068674507,
+    "gradient_margin": 0.32908490831511017,
+    "observation_sha256": "23aa4df176fa59eeb48d9a51531aacfd1f1a370b13a75df8ee0af93e9ddbd13f",
+    "gradient_l2_to_disguise": 5.680407184210473,
+    "gradient_l2_to_ground_truth": 5.709300367535857,
+    "disguise_residual_nnz": 79998,
+    "ground_truth_residual_nnz": 83126,
+    "residual_nnz_advantage": 3128,
+    "residual_sparsity_required": true,
+    "residual_sparsity_pass": true
+  },
+  "selection": {
+    "practical": {
+      "metric": "attack_loss",
+      "direction": "minimize"
+    },
+    "oracle": null
+  },
+  "run_metrics": {
+    "objective_evaluations": 10721,
+    "gradient_evaluations": 10721,
+    "outer_iterations": 819,
+    "restarts_started": 4,
+    "elapsed_seconds": 39.06534248497337,
+    "restart_index": 3
+  },
+  "experiment_metadata": {},
+  "last_metrics": {
+    "attack_loss": 27.957447052001953,
+    "objective_evaluations": 10721,
+    "gradient_evaluations": 10721,
+    "outer_iterations": 819,
+    "restarts_started": 4,
+    "elapsed_seconds": 39.06534248497337,
+    "restart_index": 3,
+    "pixel_min": 2.1150121780104348e-32,
+    "pixel_max": 1.0,
+    "outside_pixel_fraction": 0.0,
+    "pixel_step_max": 0.0,
+    "selected_label": 2,
+    "image_gradient_linf": null,
+    "variable_gradient_linf": null
+  },
+  "image_domain": "raw_0_1",
+  "attempt_stopping_reasons": [
+    "no_improvement",
+    "no_improvement",
+    "no_improvement",
+    "no_improvement"
+  ],
+  "attempt_diagnostics": [
+    {
+      "restart": 0,
+      "reason": "no_improvement",
+      "final_objective": 27.95663833618164,
+      "iterations": 206,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 1,
+      "reason": "no_improvement",
+      "final_objective": 27.957599639892578,
+      "iterations": 207,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 2,
+      "reason": "no_improvement",
+      "final_objective": 27.956575393676758,
+      "iterations": 203,
+      "last_pixel_step_max": 0.0
+    },
+    {
+      "restart": 3,
+      "reason": "no_improvement",
+      "final_objective": 27.957447052001953,
+      "iterations": 203,
+      "last_pixel_step_max": 0.0
+    }
+  ],
+  "input_identity": {
+    "observation_sha256": "23aa4df176fa59eeb48d9a51531aacfd1f1a370b13a75df8ee0af93e9ddbd13f",
+    "model_sha256": "dd69385a385e631f40e8dc5673ad026601223494081b84bb38fa7977a23dfcc5",
+    "input_shape": [
+      3,
+      32,
+      32
+    ],
+    "class_count": 10,
+    "known_label_sha256": null
+  },
+  "execution_protocol": "reconstruction_v2",
+  "preset": "idlg",
+  "profile": "calibrated",
+  "configuration": "9e2684fa11957e39",
+  "reconstruction_sha256": "b8490e83bb054ee27b08ae32c25db0817884a214c9c5afdfad650ea9dab266d3",
+  "workflow_protocol": "fixed_disguise_v3",
+  "model": "lenet5",
+  "dataset": "cifar10",
+  "seed": 2026,
+  "private_index": 564,
+  "decomposition": "residual",
+  "residual_nnz_gap": 1000,
+  "max_disguise_distance_squared": null
+}

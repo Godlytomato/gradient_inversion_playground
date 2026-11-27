@@ -1,0 +1,119 @@
+{
+  "servers": 3,
+  "gradient_coordinates": 83126,
+  "original_nonzeros": 83126,
+  "stored_nonzeros": 83127,
+  "extra_stored_nonzeros": 1,
+  "per_server_nonzeros": [
+    27926,
+    27923,
+    27278
+  ],
+  "coordinates_stored_on_multiple_servers": 1,
+  "duplicated_coordinate_indices_preview": [
+    453
+  ],
+  "duplicated_coordinate_details_preview": [
+    {
+      "coordinate": 453,
+      "original": 2.0252766609191895,
+      "stored_float32": [
+        0.0,
+        27.075828552246094,
+        -25.050552368164062
+      ],
+      "sum_float32": 2.0252761840820312
+    }
+  ],
+  "duplicated_coordinate_details_truncated": false,
+  "share_l2_norms": [
+    19.688631057739258,
+    31.95461082458496,
+    30.045564651489258
+  ],
+  "max_abs_share_value": 27.075828552246094,
+  "original_gradient_l2_norm": 30.902301019340488,
+  "max_abs_original_value": 3.293121099472046,
+  "coordinate_multiplicity": {
+    "0": 0,
+    "1": 83125,
+    "2": 1,
+    "3": 0
+  },
+  "full_sum_float64_max_abs_error": 0.0,
+  "full_sum_float32_max_abs_error": 4.76837158203125e-07,
+  "full_sum_float32_relative_l2_error": 1.5430474187171112e-08,
+  "full_sum_matches_original_float32": true,
+  "required_margin": 13.569590839395614,
+  "float32_coalitions": [
+    {
+      "mask": 1,
+      "servers": [
+        0
+      ],
+      "disguise_slot": 86,
+      "margin": 242.04609318320644,
+      "private_distance2": 567.3096770351794,
+      "disguise_distance2": 325.263583851973,
+      "passed": true
+    },
+    {
+      "mask": 2,
+      "servers": [
+        1
+      ],
+      "disguise_slot": 86,
+      "margin": 427.22278180142257,
+      "private_distance2": 1290.3809702605126,
+      "disguise_distance2": 863.1581884590901,
+      "passed": true
+    },
+    {
+      "mask": 4,
+      "servers": [
+        2
+      ],
+      "disguise_slot": 71,
+      "margin": 531.4887926515939,
+      "private_distance2": 1408.742691403116,
+      "disguise_distance2": 877.253898751522,
+      "passed": true
+    },
+    {
+      "mask": 3,
+      "servers": [
+        0,
+        1
+      ],
+      "disguise_slot": 93,
+      "margin": 21.839841651505935,
+      "private_distance2": 902.7384390057601,
+      "disguise_distance2": 880.8985973542542,
+      "passed": true
+    },
+    {
+      "mask": 5,
+      "servers": [
+        0,
+        2
+      ],
+      "disguise_slot": 74,
+      "margin": 13.570359464620424,
+      "private_distance2": 1021.1001601483642,
+      "disguise_distance2": 1007.5298006837438,
+      "passed": true
+    },
+    {
+      "mask": 6,
+      "servers": [
+        1,
+        2
+      ],
+      "disguise_slot": 94,
+      "margin": 34.52372359771806,
+      "private_distance2": 387.64253125475244,
+      "disguise_distance2": 353.1188076570344,
+      "passed": true
+    }
+  ]
+}

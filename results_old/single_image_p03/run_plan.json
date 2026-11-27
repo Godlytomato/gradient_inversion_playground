@@ -1,0 +1,76 @@
+[
+  {
+    "name": "baseline_original",
+    "mask": 7,
+    "servers": [
+      0,
+      1,
+      2
+    ],
+    "full_aggregation": true,
+    "reference": "sum of saved float32 shares"
+  },
+  {
+    "name": "coalition_001",
+    "mask": 1,
+    "servers": [
+      0
+    ],
+    "full_aggregation": false,
+    "gradient_disguise_slot": 86,
+    "geometric_margin": 242.04609068435127
+  },
+  {
+    "name": "coalition_010",
+    "mask": 2,
+    "servers": [
+      1
+    ],
+    "full_aggregation": false,
+    "gradient_disguise_slot": 86,
+    "geometric_margin": 427.22283037683826
+  },
+  {
+    "name": "coalition_100",
+    "mask": 4,
+    "servers": [
+      2
+    ],
+    "full_aggregation": false,
+    "gradient_disguise_slot": 71,
+    "geometric_margin": 531.488901640313
+  },
+  {
+    "name": "coalition_011",
+    "mask": 3,
+    "servers": [
+      0,
+      1
+    ],
+    "full_aggregation": false,
+    "gradient_disguise_slot": 93,
+    "geometric_margin": 21.839925984244587
+  },
+  {
+    "name": "coalition_101",
+    "mask": 5,
+    "servers": [
+      0,
+      2
+    ],
+    "full_aggregation": false,
+    "gradient_disguise_slot": 74,
+    "geometric_margin": 13.570360946866117
+  },
+  {
+    "name": "coalition_110",
+    "mask": 6,
+    "servers": [
+      1,
+      2
+    ],
+    "full_aggregation": false,
+    "gradient_disguise_slot": 94,
+    "geometric_margin": 34.52372519230681
+  }
+]

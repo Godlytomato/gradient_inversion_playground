@@ -1,0 +1,25 @@
+{
+  "epsilon": 13.524811742971206,
+  "all_coalitions_pass": true,
+  "float32_max_error": 2.384185791015625e-07,
+  "float32_relative_error": 7.715131544241337e-09,
+  "float32_aggregation_pass": true,
+  "extra_nnz": 1,
+  "overlap_coordinates": [
+    453
+  ],
+  "per_server_nnz": [
+    27669,
+    27624,
+    27834
+  ],
+  "per_server_norm": [
+    18.769789520992983,
+    18.90330648522339,
+    17.984620013820134
+  ],
+  "maximum_share_magnitude": 7.343478202819824,
+  "norm_amplification": 0.6117035706872603,
+  "float64_max_error": 0.0,
+  "float64_aggregation_pass": true
+}

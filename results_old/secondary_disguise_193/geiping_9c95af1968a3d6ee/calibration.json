@@ -1,0 +1,11 @@
+{
+  "calibrated": false,
+  "stage": "reconstruction_calibration",
+  "full_calibrated": false,
+  "original_calibrated": false,
+  "target_mse": 0.01,
+  "full_private_mse": 0.06614571809768677,
+  "original_private_mse": 0.06644865870475769,
+  "full_vs_original_reconstruction_mse": 0.00017746035882737488,
+  "note": "Controls use identical attack configuration and seeds; no oracle image initialization."
+}

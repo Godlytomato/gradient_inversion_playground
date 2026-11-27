@@ -1,0 +1,15 @@
+[
+  {
+    "preset": "idlg",
+    "model": "lenet5",
+    "dataset": "cifar10",
+    "seed": 2026,
+    "private_index": 564,
+    "baseline_mse": 0.0018968302756547928,
+    "baseline_mse_target": 0.01,
+    "baseline_passed": true,
+    "subset_count": 6,
+    "completed_subsets": 6,
+    "state": "complete"
+  }
+]

@@ -1,0 +1,98 @@
+attack:
+  attack_type: optimization
+  base_seed: 0
+  gan_description: null
+  initialization_policy: random
+  label_policy: known
+  loss: cosine
+  loss_mods: []
+  missingness_policy: visible_nonzero
+  optimizer_description:
+    name: adam
+    parameters:
+      lr: 0.1
+  post_update_mods:
+  - name: clamp
+    parameters:
+      maximum: 1.0
+      minimum: 0.0
+  pre_update_mods: []
+  preprocessing_gradients_policy: none
+  regularizers:
+  - name: auxiliary_prior
+    parameters:
+      weight: 1.0e-06
+  - name: tv
+    parameters:
+      weight: 1.0e-07
+  restarts: 3
+  scheduler: null
+attack_name: beyond_gradients
+data:
+  classes:
+  - 0
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  dataset: cifar10
+  size: 1
+defense_name: indexed_svd_noise
+experiment_seed: 0
+gradient_transformations:
+- name: indexed_svd_noise
+  ranking_policy:
+    name: in_place
+    parameters: {}
+  draft_policy:
+    name: highest_draft
+    parameters:
+      percent: 1.0
+  transform:
+    name: noise
+    parameters:
+      construction:
+        name: indexed_svd_alignment
+        parameters:
+          direction: -1
+      scaling:
+        name: preset
+        parameters:
+          scale: 19.894824258241144
+model: resnet18
+name: svd_direction_v1__beyond_gradients__resnet18__r24__dirmin__p070__fixed
+observer:
+  batch_matching: assignment
+  best_selection:
+    direction: minimize
+    metric: mse
+  evaluation_target_clip_confidence: null
+  evaluation_target_mse: 0.02
+  fail_policies:
+  - name: max_iterations
+    parameters:
+      limit: 2000
+  logging:
+    logging_type: database
+    metrics:
+    - mse
+    - psnr
+    - ssim
+    - attack_loss
+  metrics:
+  - name: mse
+    parameters: {}
+  - name: psnr
+    parameters: {}
+  - name: ssim
+    parameters: {}
+  oracle_selection:
+    direction: minimize
+    metric: mse
+  success_policies: []
+protocol_version: 2
