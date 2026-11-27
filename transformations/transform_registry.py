@@ -5,6 +5,7 @@ from transformations.transformation_implimentations.zero import zero
 from transformations.transformation_implimentations.noise import noise
 
 # noise construction
+from transformations.transformation_implimentations.indexed_svd_alignment import indexed_svd_alignment
 from transformations.transformation_implimentations.gaussian import gaussian
 from transformations.transformation_implimentations.uniform import uniform
 from transformations.transformation_implimentations.laplace import laplace
@@ -72,6 +73,11 @@ transform_dict = {
 # --------------------
 
 noise_construction_dict = {
+    "indexed_svd_alignment": transformation(
+        name="indexed_svd_alignment",
+        func=indexed_svd_alignment
+    ),
+
     "quantization": transformation(
         name="quantization",
         func=quantization_delta
